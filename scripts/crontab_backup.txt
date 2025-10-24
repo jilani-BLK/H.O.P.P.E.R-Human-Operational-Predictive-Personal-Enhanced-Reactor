@@ -1,0 +1,11 @@
+# HOPPER - Crontab Neo4j Backup
+# Installation: crontab -e puis coller cette ligne
+
+# Backup Neo4j quotidien à 2h00 du matin
+0 2 * * * /Users/jilani/Projet/HOPPER/scripts/backup_neo4j.sh >> /Users/jilani/Projet/HOPPER/data/backups/neo4j/cron.log 2>&1
+
+# Backup Neo4j toutes les 6 heures (optionnel - haute disponibilité)
+# 0 */6 * * * /Users/jilani/Projet/HOPPER/scripts/backup_neo4j.sh >> /Users/jilani/Projet/HOPPER/data/backups/neo4j/cron.log 2>&1
+
+# Test restore hebdomadaire (dimanche à 3h00)
+# 0 3 * * 0 TEST_RESTORE=true /Users/jilani/Projet/HOPPER/scripts/backup_neo4j.sh >> /Users/jilani/Projet/HOPPER/data/backups/neo4j/cron.log 2>&1
