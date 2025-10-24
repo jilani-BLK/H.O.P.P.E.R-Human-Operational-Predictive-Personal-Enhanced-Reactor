@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data
+data/logs/
+data/vector_store/
+data/models/
+data/auth/
+data/connectors/
+data/*.json
+data/*.db
+
+# Cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Git
+.git/
+.gitignore
+
+# Env
+.env
+.env.local
+
+# Tests
+htmlcov/
+.coverage
+.tox/
+
+# Model files (use volumes instead)
+data/models/*
+!data/models/.gitkeep
+!data/models/README.md
