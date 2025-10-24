@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""
+🧠 HOPPER - Human Operational Predictive Personal Enhanced Reactor
+Commande principale pour lancer HOPPER
+"""
+
+import sys
+import os
+import subprocess
+import argparse
+from pathlib import Path
+
+# Couleurs ANSI
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    END = '\033[0m'
+    BOLD = '\033[1m'
+
+def print_banner():
+    """Affiche la bannière HOPPER"""
+    print(f"{Colors.CYAN}╔═══════════════════════════════════════════════════════════╗{Colors.END}")
+    print(f"{Colors.CYAN}║                                                           ║{Colors.END}")
+    print(f"{Colors.CYAN}║          {Colors.GREEN}🧠 H.O.P.P.E.R{Colors.CYAN}                                ║{Colors.END}")
+    print(f"{Colors.CYAN}║     {Colors.BOLD}Human Operational Predictive Personal{Colors.END}{Colors.CYAN}        ║{Colors.END}")
+    print(f"{Colors.CYAN}║            {Colors.BOLD}Enhanced Reactor{Colors.END}{Colors.CYAN}                          ║{Colors.END}")
+    print(f"{Colors.CYAN}║                                                           ║{Colors.END}")
+    print(f"{Colors.CYAN}╚═══════════════════════════════════════════════════════════╝{Colors.END}")
+    print()
+
+def get_project_root():
+    """Obtenir la racine du projet"""
+    # Le script est dans src/cli/hopper
+    script_path = Path(__file__).resolve()
+    return script_path.parent.parent.parent
+
+def check_orchestrator_running():
+    """Vérifie si l'orchestrateur est en cours d'exécution"""
+    try:
+        import requests
+        response = requests.get("http://localhost:5050/health", timeout=1)
+        return response.status_code == 200
+    except:
+        return False
+
+def start_orchestrator(project_root):
+    """Démarre l'orchestrateur en arrière-plan"""
+    orchestrator_path = project_root / "src" / "orchestrator" / "main.py"
+    venv_python = project_root / "venv" / "bin" / "python"
+    
+    python_cmd = str(venv_python) if venv_python.exists() else "python"
+    
+    print(f"{Colors.YELLOW}🚀 Démarrage de l'orchestrateur...{Colors.END}")
+    
+    # Démarrer en arrière-plan
+    process = subprocess.Popen(
+        [python_cmd, str(orchestrator_path)],
+        cwd=str(project_root / "src" / "orchestrator"),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True
+    )
+    
+    # Attendre quelques secondes pour le démarrage
+    import time
+    for i in range(10):
+        time.sleep(0.5)
+        if check_orchestrator_running():
+            print(f"{Colors.GREEN}✅ Orchestrateur démarré avec succès{Colors.END}")
+            return True
+    
+    print(f"{Colors.RED}❌ Échec du démarrage de l'orchestrateur{Colors.END}")
+    return False
+
+def launch_tui(project_root, url="http://localhost:5050"):
+    """Lance l'interface TUI"""
+    tui_path = project_root / "src" / "cli" / "hopper_tui.py"
+    venv_python = project_root / "venv" / "bin" / "python"
+    
+    python_cmd = str(venv_python) if venv_python.exists() else "python"
+    
+    print(f"{Colors.GREEN}✨ Lancement de l'interface HOPPER...{Colors.END}")
+    print()
+    
+    # Lancer l'interface TUI
+    subprocess.run([python_cmd, str(tui_path), "--url", url])
+
+def launch_web(project_root):
+    """Lance l'interface web"""
+    print(f"{Colors.BLUE}🌐 Interface web pas encore implémentée{Colors.END}")
+    print(f"{Colors.YELLOW}   Utilisez 'hopper tui' pour l'instant{Colors.END}")
+
+def show_status(project_root):
+    """Affiche le statut de HOPPER"""
+    print(f"{Colors.CYAN}📊 Statut HOPPER{Colors.END}")
+    print(f"{Colors.CYAN}{'═' * 50}{Colors.END}")
+    print()
+    
+    # Vérifier orchestrateur
+    if check_orchestrator_running():
+        print(f"🟢 Orchestrateur: {Colors.GREEN}En ligne{Colors.END} (http://localhost:5050)")
+        
+        # Récupérer les stats
+        try:
+            import requests
+            response = requests.get("http://localhost:5050/coordination/stats", timeout=2)
+            if response.status_code == 200:
+                data = response.json()
+                total = data.get("total_modules", 0)
+                by_type = data.get("modules_by_type", {})
+                
+                print(f"📦 Modules: {Colors.BOLD}{total}{Colors.END} coordonnés")
+                print()
+                print("   Types de modules:")
+                for mod_type, count in by_type.items():
+                    print(f"   • {mod_type}: {count}")
+        except:
+            pass
+    else:
+        print(f"🔴 Orchestrateur: {Colors.RED}Hors ligne{Colors.END}")
+        print(f"   {Colors.YELLOW}Lancez avec: hopper start{Colors.END}")
+    
+    print()
+
+def stop_hopper():
+    """Arrête HOPPER"""
+    print(f"{Colors.YELLOW}🛑 Arrêt de HOPPER...{Colors.END}")
+    
+    # Trouver et tuer les processus
+    try:
+        result = subprocess.run(
+            ["pkill", "-f", "orchestrator/main.py"],
+            capture_output=True
+        )
+        if result.returncode == 0:
+            print(f"{Colors.GREEN}✅ Orchestrateur arrêté{Colors.END}")
+        else:
+            print(f"{Colors.YELLOW}⚠️  Aucun processus HOPPER trouvé{Colors.END}")
+    except:
+        print(f"{Colors.RED}❌ Erreur lors de l'arrêt{Colors.END}")
+
+def main():
+    """Point d'entrée principal"""
+    parser = argparse.ArgumentParser(
+        description="🧠 HOPPER - Assistant Personnel Intelligent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemples:
+  hopper              Lance l'interface TUI (démarre l'orchestrateur si nécessaire)
+  hopper tui          Lance l'interface terminal
+  hopper start        Démarre uniquement l'orchestrateur
+  hopper status       Affiche le statut
+  hopper stop         Arrête HOPPER
+        """
+    )
+    
+    parser.add_argument(
+        'command',
+        nargs='?',
+        default='tui',
+        choices=['tui', 'web', 'start', 'stop', 'status'],
+        help='Commande à exécuter (défaut: tui)'
+    )
+    
+    parser.add_argument(
+        '--url',
+        default='http://localhost:5050',
+        help='URL de l\'orchestrateur (défaut: http://localhost:5050)'
+    )
+    
+    parser.add_argument(
+        '--no-banner',
+        action='store_true',
+        help='Ne pas afficher la bannière'
+    )
+    
+    args = parser.parse_args()
+    
+    # Afficher la bannière
+    if not args.no_banner and args.command not in ['stop', 'status']:
+        print_banner()
+    
+    # Obtenir la racine du projet
+    project_root = get_project_root()
+    
+    # Exécuter la commande
+    if args.command == 'stop':
+        stop_hopper()
+    
+    elif args.command == 'status':
+        if not args.no_banner:
+            print_banner()
+        show_status(project_root)
+    
+    elif args.command == 'start':
+        # Démarrer uniquement l'orchestrateur
+        if check_orchestrator_running():
+            print(f"{Colors.GREEN}✅ Orchestrateur déjà en cours d'exécution{Colors.END}")
+        else:
+            if start_orchestrator(project_root):
+                print()
+                print(f"{Colors.GREEN}✅ HOPPER prêt !{Colors.END}")
+                print(f"   Lancez l'interface avec: {Colors.BOLD}hopper tui{Colors.END}")
+    
+    elif args.command == 'tui':
+        # Vérifier si l'orchestrateur tourne
+        if not check_orchestrator_running():
+            print(f"{Colors.YELLOW}⚠️  Orchestrateur non détecté{Colors.END}")
+            response = input(f"{Colors.YELLOW}   Voulez-vous le démarrer? (O/n): {Colors.END}")
+            if response.lower() != 'n':
+                if not start_orchestrator(project_root):
+                    print(f"{Colors.RED}❌ Impossible de démarrer l'orchestrateur{Colors.END}")
+                    print(f"{Colors.YELLOW}   Démarrez-le manuellement avec: python src/orchestrator/main.py{Colors.END}")
+                    return 1
+                print()
+        
+        # Lancer l'interface TUI
+        launch_tui(project_root, args.url)
+    
+    elif args.command == 'web':
+        launch_web(project_root)
+    
+    return 0
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print(f"\n{Colors.YELLOW}👋 Au revoir !{Colors.END}")
+        sys.exit(0)
