@@ -83,16 +83,46 @@ def launch_tui(project_root, url="http://localhost:5050"):
     
     python_cmd = str(venv_python) if venv_python.exists() else "python"
     
-    print(f"{Colors.GREEN}✨ Lancement de l'interface HOPPER...{Colors.END}")
+    print(f"{Colors.GREEN}✨ Lancement de l'interface terminal...{Colors.END}")
     print()
     
     # Lancer l'interface TUI
     subprocess.run([python_cmd, str(tui_path), "--url", url])
 
+def launch_neural(project_root):
+    """Lance l'interface neuronale 3D"""
+    neural_server = project_root / "web" / "neural_interface" / "neural_server.py"
+    neural_html = project_root / "web" / "neural_interface" / "index.html"
+    venv_python = project_root / "venv" / "bin" / "python"
+    
+    if not neural_server.exists():
+        print(f"{Colors.RED}❌ Interface neuronale non trouvée{Colors.END}")
+        print(f"{Colors.YELLOW}   Chemin attendu: {neural_server}{Colors.END}")
+        return
+    
+    python_cmd = str(venv_python) if venv_python.exists() else "python"
+    
+    print(f"{Colors.CYAN}🧠 Lancement de l'interface neuronale 3D...{Colors.END}")
+    print()
+    print(f"{Colors.GREEN}✨ Serveur neural démarré{Colors.END}")
+    print(f"{Colors.CYAN}🌐 Ouvrez votre navigateur sur: {Colors.BOLD}http://localhost:8080{Colors.END}")
+    print()
+    print(f"{Colors.YELLOW}💡 Vous verrez la sphère neuronale intelligente de HOPPER en temps réel{Colors.END}")
+    print(f"{Colors.YELLOW}   Appuyez sur Ctrl+C pour arrêter{Colors.END}")
+    print()
+    
+    # Lancer le serveur neural
+    try:
+        subprocess.run(
+            [python_cmd, str(neural_server)],
+            cwd=str(neural_server.parent)
+        )
+    except KeyboardInterrupt:
+        print(f"\n{Colors.GREEN}✅ Interface neuronale arrêtée{Colors.END}")
+
 def launch_web(project_root):
-    """Lance l'interface web"""
-    print(f"{Colors.BLUE}🌐 Interface web pas encore implémentée{Colors.END}")
-    print(f"{Colors.YELLOW}   Utilisez 'hopper tui' pour l'instant{Colors.END}")
+    """Lance l'interface web (alias pour neural)"""
+    launch_neural(project_root)
 
 def show_status(project_root):
     """Affiche le statut de HOPPER"""
@@ -150,7 +180,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemples:
-  hopper              Lance l'interface TUI (démarre l'orchestrateur si nécessaire)
+  hopper              Lance l'interface neuronale 3D (défaut)
+  hopper neural       Lance la sphère neuronale intelligente
   hopper tui          Lance l'interface terminal
   hopper start        Démarre uniquement l'orchestrateur
   hopper status       Affiche le statut
@@ -161,9 +192,9 @@ Exemples:
     parser.add_argument(
         'command',
         nargs='?',
-        default='tui',
-        choices=['tui', 'web', 'start', 'stop', 'status'],
-        help='Commande à exécuter (défaut: tui)'
+        default='neural',
+        choices=['neural', 'tui', 'web', 'start', 'stop', 'status'],
+        help='Commande à exécuter (défaut: neural)'
     )
     
     parser.add_argument(
@@ -206,6 +237,21 @@ Exemples:
                 print(f"{Colors.GREEN}✅ HOPPER prêt !{Colors.END}")
                 print(f"   Lancez l'interface avec: {Colors.BOLD}hopper tui{Colors.END}")
     
+    elif args.command == 'neural' or args.command == 'web':
+        # Vérifier si l'orchestrateur tourne
+        if not check_orchestrator_running():
+            print(f"{Colors.YELLOW}⚠️  Orchestrateur non détecté{Colors.END}")
+            response = input(f"{Colors.YELLOW}   Voulez-vous le démarrer? (O/n): {Colors.END}")
+            if response.lower() != 'n':
+                if not start_orchestrator(project_root):
+                    print(f"{Colors.RED}❌ Impossible de démarrer l'orchestrateur{Colors.END}")
+                    print(f"{Colors.YELLOW}   Démarrez-le manuellement avec: python src/orchestrator/main.py{Colors.END}")
+                    return 1
+                print()
+        
+        # Lancer l'interface neuronale 3D
+        launch_neural(project_root)
+    
     elif args.command == 'tui':
         # Vérifier si l'orchestrateur tourne
         if not check_orchestrator_running():
@@ -220,9 +266,6 @@ Exemples:
         
         # Lancer l'interface TUI
         launch_tui(project_root, args.url)
-    
-    elif args.command == 'web':
-        launch_web(project_root)
     
     return 0
 
