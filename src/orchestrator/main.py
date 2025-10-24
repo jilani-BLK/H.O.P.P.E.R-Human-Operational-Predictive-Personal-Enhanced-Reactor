@@ -386,6 +386,58 @@ async def clear_user_context(user_id: str):
     return {"message": f"Contexte effacé pour {user_id}"}
 
 
+@app.get("/coordination/stats")
+async def get_coordination_stats() -> Dict[str, Any]:
+    """Récupère les statistiques du Coordination Hub"""
+    if coordination_hub_enabled and get_hub:
+        try:
+            hub = get_hub()
+            stats = hub.get_statistics()
+            
+            return {
+                "total_modules": stats.get("total_modules", 0),
+                "modules_by_type": stats.get("modules_by_type", {}),
+                "modules": []
+            }
+        except Exception as e:
+            return {
+                "error": str(e),
+                "total_modules": 0,
+                "modules_by_type": {}
+            }
+    else:
+        return {
+            "error": "Coordination Hub non disponible",
+            "total_modules": 0,
+            "modules_by_type": {}
+        }
+
+
+@app.get("/coordination/health")
+async def get_coordination_health() -> Dict[str, Any]:
+    """Vérifie la santé de tous les modules coordonnés"""
+    if coordination_hub_enabled and get_hub:
+        try:
+            hub = get_hub()
+            health_status = await hub.check_all_health()
+            
+            return {
+                "status": "operational",
+                "modules": health_status
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e),
+                "modules": {}
+            }
+    else:
+        return {
+            "status": "unavailable",
+            "modules": {}
+        }
+
+
 # Inclusion des routes API additionnelles
 app.include_router(router, prefix="/api/v1")
 
