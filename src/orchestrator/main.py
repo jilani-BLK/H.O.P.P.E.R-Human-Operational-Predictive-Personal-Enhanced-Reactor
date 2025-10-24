@@ -5,7 +5,6 @@ Module principal coordonnant tous les services de l'assistant
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import os
@@ -34,6 +33,16 @@ except ImportError:
     logger.warning("⚠️ Learning middleware non disponible")
     learning_enabled = False
     LearningMiddleware = None
+
+# Import neural monitoring
+try:
+    from neural_monitor import init_neural_monitor, get_neural_monitor
+    neural_monitoring_enabled = True
+except ImportError:
+    logger.warning("⚠️ Neural monitoring non disponible")
+    neural_monitoring_enabled = False
+    init_neural_monitor = None  # type: ignore[assignment]
+    get_neural_monitor = None  # type: ignore[assignment]
 
 try:
     from .config import settings
@@ -65,6 +74,14 @@ async def lifespan(app: FastAPI):
     """Gestion du cycle de vie de l'application"""
     # Startup
     logger.info("🚀 Démarrage de HOPPER Orchestrator")
+    
+    # Initialiser neural monitoring
+    neural_monitor = None
+    if neural_monitoring_enabled and init_neural_monitor:
+        neural_monitor = init_neural_monitor(enabled=True)
+        await neural_monitor.start()
+        logger.info("✅ Neural monitoring activé")
+    
     await service_registry.register_services()
     health_status = await service_registry.check_all_health()
     logger.info(f"État des services: {health_status}")
@@ -82,6 +99,8 @@ async def lifespan(app: FastAPI):
     await service_registry.close_all()
     if cleanup_task:
         cleanup_task.cancel()
+    if neural_monitor:
+        await neural_monitor.stop()
 
 
 # Initialisation de l'application FastAPI
@@ -144,91 +163,6 @@ async def health_check() -> Dict[str, Any]:
     }
 
 
-@app.post("/command/stream")
-async def process_command_stream(request: CommandRequest, req: Request):
-    """
-    Point d'entrée pour traiter une commande avec streaming de pensées (SSE)
-    
-    Args:
-        request: Commande de l'utilisateur
-        req: FastAPI Request
-        
-    Returns:
-        Server-Sent Events stream des pensées HOPPER
-    """
-    async def event_generator():
-        """Générateur d'événements SSE"""
-        thought_queue = None
-        try:
-            user_id: str = request.user_id or "default"
-            
-            logger.info(f"📥 Commande stream reçue: '{request.text}' (user: {user_id})")
-            
-            # Mise à jour contexte
-            if request.context:
-                context_manager.update_context(user_id, request.context)
-            
-            current_context = context_manager.get_context(user_id)
-            
-            # S'abonner au flux de pensées
-            thought_queue = intent_dispatcher.thought_stream.subscribe()
-            
-            # Lancer le dispatch en arrière-plan
-            async def process():
-                result = await intent_dispatcher.dispatch(
-                    text=request.text,
-                    user_id=user_id,
-                    context=current_context
-                )
-                
-                # Mise à jour historique
-                context_manager.add_to_history(
-                    user_id,
-                    user_input=request.text,
-                    assistant_response=result.get("message", "")
-                )
-                
-                # Ajouter réponse finale comme pensée
-                intent_dispatcher.thought_stream.add_thought(
-                    "response",
-                    result.get("message", ""),
-                    result
-                )
-            
-            # Démarrer le traitement
-            task = asyncio.create_task(process())
-            
-            # Streamer les pensées
-            async for thought in intent_dispatcher.thought_stream.stream_thoughts():
-                # Format SSE: data: {json}\n\n
-                yield f"data: {thought.model_dump_json()}\n\n"
-                
-                # Arrêter si done ou error
-                if thought.type in ["done", "error", "response"]:
-                    break
-            
-            # Attendre la fin du traitement
-            await task
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur stream: {str(e)}")
-            yield f"data: {{\"type\": \"error\", \"message\": \"{str(e)}\"}}\n\n"
-        finally:
-            # Se désabonner
-            if thought_queue is not None:
-                intent_dispatcher.thought_stream.unsubscribe(thought_queue)
-    
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"  # Désactive buffering nginx
-        }
-    )
-
-
 @app.post("/command", response_model=CommandResponse)
 async def process_command(request: CommandRequest, req: Request):
     """
@@ -247,6 +181,15 @@ async def process_command(request: CommandRequest, req: Request):
         
         logger.info(f"📥 Commande reçue: '{request.text}' (user: {user_id})")
         
+        # Émettre activité neuronale - Input
+        neural_monitor = get_neural_monitor() if get_neural_monitor else None
+        if neural_monitor:
+            await neural_monitor.emit_neural_activity(
+                "input",
+                intensity=1.0,
+                metadata={"text": request.text[:50], "user": user_id}
+            )
+        
         # Mise à jour du contexte
         if request.context:
             context_manager.update_context(user_id, request.context)
@@ -255,6 +198,9 @@ async def process_command(request: CommandRequest, req: Request):
         current_context = context_manager.get_context(user_id)
         
         # Dispatch de la commande
+        if neural_monitor:
+            await neural_monitor.emit_neural_activity("dispatch", intensity=1.2)
+        
         result = await intent_dispatcher.dispatch(
             text=request.text,
             user_id=user_id,
