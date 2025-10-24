@@ -1,0 +1,50 @@
+# HOPPER - Dépendances complètes
+# Installation: pip install -r requirements-full.txt
+
+# ═══════════════════════════════════════════════════════════════
+# TRAITEMENT DE DOCUMENTS
+# ═══════════════════════════════════════════════════════════════
+PyPDF2>=3.0.0              # Manipulation de fichiers PDF
+python-docx>=0.8.11        # Fichiers Word (.docx)
+openpyxl>=3.1.0            # Fichiers Excel (.xlsx)
+python-pptx>=0.6.21        # Fichiers PowerPoint (.pptx)
+
+# ═══════════════════════════════════════════════════════════════
+# WEB ET HTML
+# ═══════════════════════════════════════════════════════════════
+beautifulsoup4>=4.12.0     # Parsing HTML/XML
+html2text>=2020.1.16       # Conversion HTML vers texte
+markdown>=3.4.0            # Support Markdown
+lxml>=4.9.0                # Parser XML rapide
+
+# ═══════════════════════════════════════════════════════════════
+# SÉCURITÉ
+# ═══════════════════════════════════════════════════════════════
+python-magic>=0.4.27       # Détection de type MIME
+ssdeep>=3.4                # Hachage fuzzy (optionnel)
+
+# ═══════════════════════════════════════════════════════════════
+# IMAGES ET OCR
+# ═══════════════════════════════════════════════════════════════
+Pillow>=10.0.0             # Manipulation d'images
+pytesseract>=0.3.10        # OCR (nécessite Tesseract)
+
+# ═══════════════════════════════════════════════════════════════
+# DONNÉES ET SCIENCE
+# ═══════════════════════════════════════════════════════════════
+pandas>=2.0.0              # Analyse de données
+numpy>=1.24.0              # Calculs numériques
+
+# ═══════════════════════════════════════════════════════════════
+# UTILITAIRES
+# ═══════════════════════════════════════════════════════════════
+requests>=2.31.0           # Requêtes HTTP
+aiohttp>=3.8.0             # Requêtes HTTP asynchrones
+colorama>=0.4.6            # Couleurs dans le terminal
+
+# ═══════════════════════════════════════════════════════════════
+# OPTIONNEL - AMÉLIORATIONS
+# ═══════════════════════════════════════════════════════════════
+pydantic>=2.0.0            # Validation de données (optionnel)
+networkx>=3.0              # Graphes de dépendances (optionnel)
+matplotlib>=3.7.0          # Visualisation (optionnel)

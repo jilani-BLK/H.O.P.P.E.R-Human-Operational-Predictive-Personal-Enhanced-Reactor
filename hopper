@@ -1,0 +1,19 @@
+#!/bin/bash
+# HOPPER CLI Wrapper
+# Utilisation: hopper "votre commande"
+
+# Déterminer le chemin du script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VENV_PATH="$SCRIPT_DIR/.venv"
+PYTHON_SCRIPT="$SCRIPT_DIR/hopper_cli.py"
+
+# Vérifier que le venv existe
+if [ ! -d "$VENV_PATH" ]; then
+    echo "Environnement virtuel non trouvé dans $VENV_PATH"
+    echo "Créez-le avec: python3 -m venv .venv"
+    exit 1
+fi
+
+# Activer le venv et exécuter
+source "$VENV_PATH/bin/activate"
+python "$PYTHON_SCRIPT" "$@"

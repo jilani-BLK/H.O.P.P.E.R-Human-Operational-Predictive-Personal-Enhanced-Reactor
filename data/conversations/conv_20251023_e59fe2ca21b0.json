@@ -1,0 +1,39 @@
+{
+  "conversation_id": "e59fe2ca21b0",
+  "start_time": "2025-10-23T00:04:19.828698",
+  "end_time": "2025-10-23T00:04:19.828726",
+  "turns": [
+    {
+      "timestamp": "2025-10-23T00:04:19.828698",
+      "user_input": "Quel temps fait-il aujourd'hui à Paris?",
+      "assistant_response": "Il fait 15°C avec quelques nuages à Paris.",
+      "intent": "weather_query",
+      "satisfaction_score": 5,
+      "context": null,
+      "error": null
+    },
+    {
+      "timestamp": "2025-10-23T00:04:19.828715",
+      "user_input": "Envoie un email à [EMAIL]",
+      "assistant_response": "Email envoyé à [EMAIL]",
+      "intent": "send_email",
+      "satisfaction_score": 4,
+      "context": null,
+      "error": null
+    },
+    {
+      "timestamp": "2025-10-23T00:04:19.828726",
+      "user_input": "Appelle mon contact: [PHONE]",
+      "assistant_response": "Appel initié vers [PHONE]",
+      "intent": "make_call",
+      "satisfaction_score": 5,
+      "context": null,
+      "error": null
+    }
+  ],
+  "metadata": {
+    "num_turns": 3,
+    "anonymized": true,
+    "avg_satisfaction": 4.666666666666667
+  }
+}

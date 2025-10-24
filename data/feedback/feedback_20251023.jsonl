@@ -1,0 +1,12 @@
+{"timestamp": "2025-10-23T00:10:46.822479", "score": 5, "comment": "Excellente réponse rapide!", "context": "morning", "interaction_type": null, "response_time_ms": 250, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:10:46.822702", "score": 4, "comment": "Bien mais un peu lent", "context": "afternoon", "interaction_type": null, "response_time_ms": 3500, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:10:46.822766", "score": 2, "comment": "Ne comprend pas ma question", "context": "evening", "interaction_type": null, "response_time_ms": null, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:10:46.822912", "score": 5, "comment": null, "context": "evening", "interaction_type": null, "response_time_ms": 180, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:11.883127", "score": 5, "comment": "Excellent, très rapide !", "context": "morning", "interaction_type": "chat", "response_time_ms": 250, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:11.883228", "score": 4, "comment": "Bien mais un peu lent", "context": "afternoon", "interaction_type": "chat", "response_time_ms": 1200, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:11.883283", "score": 2, "comment": "N'a pas compris ma demande", "context": "evening", "interaction_type": "chat", "response_time_ms": 300, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:11.884310", "score": 4, "comment": "Bien, mais j'aimerais plus de détails", "context": "afternoon", "interaction_type": "command", "response_time_ms": 500, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:33.835908", "score": 5, "comment": "Excellent, très rapide !", "context": "morning", "interaction_type": "chat", "response_time_ms": 250, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:33.836001", "score": 4, "comment": "Bien mais un peu lent", "context": "afternoon", "interaction_type": "chat", "response_time_ms": 1200, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:33.836055", "score": 2, "comment": "N'a pas compris ma demande", "context": "evening", "interaction_type": "chat", "response_time_ms": 300, "error_occurred": false, "tags": []}
+{"timestamp": "2025-10-23T00:21:33.837069", "score": 4, "comment": "Bien, mais j'aimerais plus de détails", "context": "afternoon", "interaction_type": "command", "response_time_ms": 500, "error_occurred": false, "tags": []}

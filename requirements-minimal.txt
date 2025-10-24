@@ -1,0 +1,11 @@
+# HOPPER - Dépendances minimales
+# Installation: pip install -r requirements-minimal.txt
+# Pour fonctionnalités de base uniquement (reasoning, agent, core)
+
+# Aucune dépendance externe requise pour les fonctionnalités de base!
+# Les modules suivants fonctionnent avec la stdlib Python uniquement:
+# - src/reasoning/ (ProblemSolver, CodeExecutor, CodeGenerator, ExperienceManager)
+# - src/agent/ (Agent LLM de base)
+# - src/security/ (fonctionnalités de base)
+
+# Pour des fonctionnalités avancées, voir requirements-full.txt

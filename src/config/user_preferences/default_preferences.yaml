@@ -1,0 +1,21 @@
+communication:
+  tone: professional
+  verbosity: balanced
+learning:
+  anonymize_data: true
+  collect_conversations: true
+  feedback_time: '20:00'
+  request_daily_feedback: true
+modes:
+  night_mode:
+    enabled: true
+    end_time: 07:00
+    start_time: '22:00'
+notifications:
+  batch_delay: 5
+  urgent_keywords: []
+  vip_contacts: []
+user:
+  language: fr
+  name: Utilisateur
+  timezone: Europe/Paris

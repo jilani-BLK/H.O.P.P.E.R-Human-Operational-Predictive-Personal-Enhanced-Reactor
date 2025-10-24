@@ -1,0 +1,69 @@
+# Structure de la Documentation HOPPER
+
+docs/
+├── README.md                          # Index principal de la documentation
+├── USER_GUIDE.md                      # Guide utilisateur complet
+├── DEV_GUIDE.md                       # Guide développeur
+├── ARCHITECTURE.md                    # Architecture technique
+├── OPTIMIZATION_GUIDE.md              # Guide d'optimisation
+├── VALIDATION_COMPLETE.md             # Validation des 6 phases
+│
+├── guides/                            # Guides pratiques
+│   ├── QUICKSTART.md                  # Démarrage rapide
+│   ├── VOICE_SETUP.md                 # Configuration vocale
+│   ├── TROUBLESHOOTING.md             # Résolution de problèmes
+│   ├── CLI_GUIDE.md                   # Guide ligne de commande
+│   ├── DEVELOPMENT.md                 # Guide de développement
+│   └── DOCKER_INTEGRATION_FIX.md      # Corrections Docker
+│
+├── phases/                            # Documents de phases
+│   ├── PHASE1_*.md                    # Phase 1: Pipeline de base
+│   ├── PHASE2_*.md                    # Phase 2: Knowledge Base
+│   ├── PHASE_5_*.md                   # Phase 5: Connecteurs
+│   └── PHASE_6_STATUS.md              # Phase 6: Monitoring
+│
+├── security/                          # Documentation sécurité
+│   ├── ANALYSE_COMPLETE_SECURITE.md
+│   ├── HTTPS_TLS_SETUP.md
+│   ├── QUICKSTART_SECURITE.md
+│   ├── RAPPORT_CORRECTIONS_SECURITE.md
+│   ├── RAPPORT_FINAL_SECURITE.md
+│   ├── RESUME_SESSION_CORRECTIONS.md
+│   └── TABLEAU_BORD_SECURITE.md
+│
+├── reports/                           # Rapports d'analyse
+│   ├── PERFORMANCE_ANALYSIS.md
+│   ├── OPTIMIZATION_RESULTS.md
+│   ├── OPTIMIZATIONS.md
+│   ├── PROBLEMES_IDENTIFIES.md
+│   ├── RAPPORT_TESTS_COMPLET.md
+│   ├── TESTS_CONCRETS_RESULTATS.md
+│   └── VALIDATION_FINALE.md
+│
+├── architecture/                      # Documents architecture avancée
+│   ├── ARCHITECTURE_RAG_AVANCEE.md
+│   ├── ARCHITECTURE_RAG_VISUELLE.md
+│   ├── ARCHITECTURE_OLD.md
+│   └── PLAN_IMPLEMENTATION_RAG_AVANCE.md
+│
+└── archives/                          # Documents obsolètes
+    ├── Anciens README, PHASE plans
+    ├── Anciens rapports de corrections
+    └── Documents historiques
+
+## Documents Racine du Projet
+
+HOPPER/
+├── README.md                          # README principal du projet
+├── CHANGELOG.md                       # Historique des changements
+├── CONTRIBUTING.md                    # Guide de contribution
+├── CODE_OF_CONDUCT.md                 # Code de conduite
+└── TROUBLESHOOTING.md                 # Dépannage rapide
+
+## Navigation Rapide
+
+- Démarrer avec HOPPER: docs/guides/QUICKSTART.md
+- Utiliser HOPPER: docs/USER_GUIDE.md
+- Développer sur HOPPER: docs/DEV_GUIDE.md
+- Optimiser HOPPER: docs/OPTIMIZATION_GUIDE.md
+- Validation complète: docs/VALIDATION_COMPLETE.md

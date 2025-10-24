@@ -1,0 +1,56 @@
+commands:
+  cat:
+    allowed_args: []
+    description: Affiche contenu fichier
+    file_access: read
+  date:
+    allowed_args: []
+    description: Affiche date/heure
+  echo:
+    allowed_args: []
+    description: Affiche texte
+  find:
+    allowed_args:
+    - -name
+    - -type
+    - -maxdepth
+    description: Recherche fichiers
+    max_depth: 5
+  grep:
+    allowed_args:
+    - -r
+    - -i
+    - -n
+    - -v
+    - -E
+    description: Recherche dans fichiers
+  head:
+    allowed_args:
+    - -n
+    description: "Premi\xE8res lignes fichier"
+  ls:
+    allowed_args:
+    - -la
+    - -lh
+    - -R
+    - -a
+    - -l
+    description: Liste fichiers
+    max_depth: 3
+  pwd:
+    allowed_args: []
+    description: "Affiche r\xE9pertoire courant"
+  tail:
+    allowed_args:
+    - -n
+    - -f
+    description: "Derni\xE8res lignes fichier"
+  wc:
+    allowed_args:
+    - -l
+    - -w
+    - -c
+    description: Compte lignes/mots
+  whoami:
+    allowed_args: []
+    description: Affiche utilisateur

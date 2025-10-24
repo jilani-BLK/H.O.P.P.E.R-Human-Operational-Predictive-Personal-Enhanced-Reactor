@@ -1,0 +1,224 @@
+services:
+  # Orchestrateur Central (Python)
+  orchestrator:
+    build:
+      context: .
+      dockerfile: docker/orchestrator.Dockerfile
+    container_name: hopper-orchestrator
+    ports:
+      - "${ORCHESTRATOR_PORT:-5050}:5050"
+    volumes:
+      # Mount orchestrator code
+      - ./src/orchestrator:/app
+      # Mount dependencies for imports
+      - ./src/filesystem:/filesystem
+      - ./src/__init__.py:/src/__init__.py
+      # Mount config and data
+      - ./config:/config
+      - ./data:/data
+    environment:
+      - ORCHESTRATOR_PORT=${ORCHESTRATOR_PORT:-5050}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/..
+    env_file:
+      - .env
+    depends_on:
+      - llm
+      - connectors
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Moteur LLM (C++ avec llama.cpp)
+  llm:
+    build:
+      context: .
+      dockerfile: docker/llm.Dockerfile
+    container_name: hopper-llm
+    ports:
+      - "${LLM_SERVICE_PORT:-5001}:5001"
+    volumes:
+      - ./src/llm_engine:/app
+      - ./data/models:/models:ro
+      - ./data/vector_store:/data/vector_store
+      - ./config:/config:ro
+    environment:
+      - LLM_SERVICE_PORT=5001
+      - LLM_MODEL_PATH=${LLM_MODEL_PATH}
+      - LLM_CONTEXT_SIZE=${LLM_CONTEXT_SIZE}
+      - LLM_N_THREADS=${LLM_N_THREADS}
+      - LLM_N_GPU_LAYERS=${LLM_N_GPU_LAYERS}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS}
+      - KB_PERSIST_PATH=${KB_PERSIST_PATH}
+      - KB_EMBEDDING_MODEL=${KB_EMBEDDING_MODEL}
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Module d'exécution système (C)
+  system_executor:
+    build:
+      context: .
+      dockerfile: docker/system_executor.Dockerfile
+    container_name: hopper-system-executor
+    ports:
+      - "${SYSTEM_EXECUTOR_PORT:-5002}:5002"
+    volumes:
+      - /Users:/host_users:ro
+    environment:
+      - SYSTEM_EXECUTOR_PORT=5002
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    privileged: false
+
+  # Module STT (Speech-to-Text)
+  stt:
+    build:
+      context: .
+      dockerfile: docker/stt.Dockerfile
+    container_name: hopper-stt
+    ports:
+      - "${STT_SERVICE_PORT:-5003}:5003"
+    volumes:
+      - ./src/stt:/app
+      - ./data/models:/models
+    environment:
+      - STT_SERVICE_PORT=5003
+      - STT_MODEL=${STT_MODEL:-whisper-medium}
+      - STT_LANGUAGE=${STT_LANGUAGE:-fr}
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Module TTS (Text-to-Speech)
+  tts:
+    build:
+      context: .
+      dockerfile: docker/tts.Dockerfile
+    container_name: hopper-tts
+    ports:
+      - "${TTS_SERVICE_PORT:-5004}:5004"
+    volumes:
+      - ./src/tts:/app
+      - ./data/models:/models
+    environment:
+      - TTS_SERVICE_PORT=5004
+      - TTS_VOICE=${TTS_VOICE:-fr-FR}
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Module d'authentification
+  auth:
+    build:
+      context: .
+      dockerfile: docker/auth.Dockerfile
+    container_name: hopper-auth
+    ports:
+      - "${AUTH_SERVICE_PORT:-5005}:5005"
+    volumes:
+      - ./src/auth:/app
+      - ./data/auth:/data
+    environment:
+      - AUTH_SERVICE_PORT=5005
+      - CONFIDENCE_THRESHOLD=${AUTH_CONFIDENCE_THRESHOLD:-0.85}
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+
+  # Connecteurs (groupés pour Phase 1)
+  connectors:
+    build:
+      context: .
+      dockerfile: docker/connectors.Dockerfile
+    container_name: hopper-connectors
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./src/connectors:/app
+      - ./config:/config
+      - ./data/connectors:/data
+    environment:
+      - CONNECTOR_SERVICE_PORT=5006
+    env_file:
+      - .env
+    networks:
+      - hopper-network
+    restart: unless-stopped
+
+  # Neo4j - GraphRAG Database (Phase 3.5)
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: hopper-neo4j
+    ports:
+      - "7474:7474"   # HTTP Browser
+      - "7687:7687"   # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/hopper123
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=2G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - hopper-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "hopper123", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  hopper-network:
+    driver: bridge
+
+volumes:
+  models:
+  vector_store:
+  auth_data:
+  neo4j_data:
+  neo4j_logs:

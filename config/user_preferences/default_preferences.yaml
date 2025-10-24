@@ -1,0 +1,183 @@
+# Configuration des préférences utilisateur HOPPER
+# Phase 4 - Intelligence et Apprentissage
+
+# Informations utilisateur
+user:
+  name: "Utilisateur"
+  timezone: "Europe/Paris"
+  language: "fr"
+
+# Mode de fonctionnement
+modes:
+  # Mode nuit (silence notifications)
+  night_mode:
+    enabled: true
+    start_time: "22:00"
+    end_time: "07:00"
+    allow_urgent: true  # Autoriser notifications urgentes
+    
+  # Mode travail (focus)
+  work_mode:
+    enabled: false
+    start_time: "09:00"
+    end_time: "18:00"
+    minimize_interruptions: true
+    
+  # Mode weekend
+  weekend_mode:
+    enabled: false
+    relaxed_schedule: true
+
+# Gestion des notifications
+notifications:
+  # Priorités
+  priority_levels:
+    urgent:
+      enabled: true
+      sound: true
+      voice_alert: true
+    high:
+      enabled: true
+      sound: true
+      voice_alert: false
+    medium:
+      enabled: true
+      sound: false
+      voice_alert: false
+    low:
+      enabled: false
+      defer_until: "next_check"
+  
+  # Contacts VIP (notifications immédiates même en mode nuit)
+  vip_contacts:
+    - "famille"
+    - "urgence"
+    - "travail_important"
+  
+  # Mots-clés urgents
+  urgent_keywords:
+    - "urgent"
+    - "emergency"
+    - "critique"
+    - "maintenant"
+  
+  # Délai avant regroupement (minutes)
+  batch_delay: 5
+  max_batch_size: 10
+
+# Préférences de communication
+communication:
+  # Verbosité des réponses
+  verbosity: "balanced"  # concise | balanced | detailed
+  
+  # Ton de communication
+  tone: "professional"  # casual | professional | friendly
+  
+  # Langue de réponse
+  response_language: "fr"
+  
+  # Confirmations
+  confirm_actions:
+    dangerous: true  # Actions critiques (suppression, envoi, etc.)
+    expensive: true  # Actions coûteuses (API payantes, etc.)
+    all: false       # Toutes les actions
+
+# Apprentissage et adaptation
+learning:
+  # Collecte de données pour fine-tuning
+  collect_conversations: true
+  anonymize_data: true
+  
+  # Feedback automatique
+  request_daily_feedback: true
+  feedback_time: "20:00"
+  
+  # Apprentissage continu
+  adapt_to_usage: true
+  learn_preferences: true
+  
+  # Rétention des données
+  conversation_retention_days: 30
+  feedback_retention_days: 90
+
+# Sécurité
+security:
+  # Authentification vocale
+  voice_auth:
+    enabled: false
+    strict_mode: false
+    
+  # Confirmations commandes sensibles
+  require_confirmation:
+    - "delete"
+    - "send_email"
+    - "make_payment"
+    - "shutdown"
+  
+  # Limitation des tentatives
+  max_failed_attempts: 3
+  lockout_duration_minutes: 5
+  
+  # Commands interdites sans confirmation
+  blocked_without_confirm:
+    - "rm -rf"
+    - "sudo"
+    - "format"
+
+# Préférences de réponse par contexte
+context_preferences:
+  morning:
+    greeting: true
+    brief_summary: true
+    
+  evening:
+    greeting: true
+    day_summary: true
+    
+  urgent:
+    immediate_response: true
+    skip_pleasantries: true
+
+# Intégrations externes
+integrations:
+  calendar:
+    check_frequency_minutes: 15
+    notify_before_event_minutes: 15
+    
+  email:
+    check_frequency_minutes: 30
+    priority_only: false
+    
+  weather:
+    daily_briefing: true
+    briefing_time: "07:00"
+
+# Limites et quotas
+limits:
+  # Requêtes LLM par heure
+  max_llm_requests_per_hour: 60
+  
+  # Taille maximale contexte
+  max_context_messages: 20
+  
+  # Durée maximale conversation
+  max_conversation_duration_minutes: 60
+
+# Métriques et monitoring
+monitoring:
+  track_satisfaction: true
+  track_response_time: true
+  track_error_rate: true
+  
+  # Alertes
+  alert_on_low_satisfaction: true
+  satisfaction_threshold: 3.0  # /5
+  
+  alert_on_high_error_rate: true
+  error_rate_threshold: 0.1  # 10%
+
+# Backup et récupération
+backup:
+  auto_backup_preferences: true
+  backup_frequency_hours: 24
+  keep_backups_count: 7

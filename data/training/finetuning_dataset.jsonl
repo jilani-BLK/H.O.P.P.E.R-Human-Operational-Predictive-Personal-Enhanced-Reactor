@@ -1,0 +1,3 @@
+{"messages": [{"role": "user", "content": "Quel temps fait-il aujourd'hui à Paris?"}, {"role": "assistant", "content": "Il fait 15°C avec quelques nuages à Paris."}], "metadata": {"intent": "weather_query"}}
+{"messages": [{"role": "user", "content": "Envoie un email à [EMAIL]"}, {"role": "assistant", "content": "Email envoyé à [EMAIL]"}], "metadata": {"intent": "send_email"}}
+{"messages": [{"role": "user", "content": "Appelle mon contact: [PHONE]"}, {"role": "assistant", "content": "Appel initié vers [PHONE]"}], "metadata": {"intent": "make_call"}}

@@ -1,0 +1,126 @@
+"""
+Tests d'intégration pour HOPPER
+"""
+
+import pytest
+import requests
+import time
+
+BASE_URL = "http://localhost:5050"
+TIMEOUT = 30
+
+
+class TestHealthChecks:
+    """Tests de santé des services"""
+    
+    def test_orchestrator_health(self):
+        """Orchestrateur doit répondre"""
+        response = requests.get(f"{BASE_URL}/health", timeout=TIMEOUT)
+        assert response.status_code == 200
+        assert "status" in response.json()
+    
+    def test_all_services_registered(self):
+        """Tous les services doivent être enregistrés"""
+        response = requests.get(f"{BASE_URL}/health", timeout=TIMEOUT)
+        data = response.json()
+        
+        expected_services = ["llm", "system_executor", "stt", "tts", "auth", "connectors"]
+        assert "services" in data
+        
+        for service in expected_services:
+            assert service in data["services"]
+
+
+class TestCommandProcessing:
+    """Tests de traitement des commandes"""
+    
+    def test_simple_command(self):
+        """Commande simple doit être traitée"""
+        payload = {
+            "text": "Bonjour HOPPER",
+            "user_id": "test_user"
+        }
+        
+        response = requests.post(
+            f"{BASE_URL}/command",
+            json=payload,
+            timeout=TIMEOUT
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "success" in data
+        assert "message" in data
+    
+    def test_system_command(self):
+        """Commande système doit être routée"""
+        payload = {
+            "text": "Crée un fichier test.txt",
+            "user_id": "test_user"
+        }
+        
+        response = requests.post(
+            f"{BASE_URL}/command",
+            json=payload,
+            timeout=TIMEOUT
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("success") is not None
+
+
+class TestContext:
+    """Tests de gestion du contexte"""
+    
+    def test_context_creation(self):
+        """Contexte doit être créé automatiquement"""
+        user_id = f"test_user_{int(time.time())}"
+        
+        # Envoyer une commande
+        payload = {"text": "Hello", "user_id": user_id}
+        requests.post(f"{BASE_URL}/command", json=payload)
+        
+        # Récupérer le contexte
+        response = requests.get(f"{BASE_URL}/context/{user_id}")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "context" in data
+        assert "conversation_history" in data["context"]
+    
+    def test_context_clear(self):
+        """Contexte doit pouvoir être effacé"""
+        user_id = f"test_user_{int(time.time())}"
+        
+        # Créer contexte
+        requests.post(f"{BASE_URL}/command", json={"text": "Test", "user_id": user_id})
+        
+        # Effacer
+        response = requests.delete(f"{BASE_URL}/context/{user_id}")
+        assert response.status_code == 200
+
+
+class TestAPI:
+    """Tests de l'API"""
+    
+    def test_capabilities(self):
+        """Endpoint capabilities doit fonctionner"""
+        response = requests.get(f"{BASE_URL}/api/v1/capabilities")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "capabilities" in data
+    
+    def test_services_list(self):
+        """Endpoint services doit lister les services"""
+        response = requests.get(f"{BASE_URL}/api/v1/services")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "services" in data
+        assert len(data["services"]) > 0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

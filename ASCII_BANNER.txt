@@ -1,0 +1,152 @@
+
+     _   _    ___    ____   ____   _____   ____  
+    | | | |  / _ \  |  _ \ |  _ \ | ____| |  _ \ 
+    | |_| | | | | | | |_) || |_) ||  _|   | |_) |
+    |  _  | | |_| | |  __/ |  __/ | |___  |  _ < 
+    |_| |_|  \___/  |_|    |_|    |_____| |_| \_\
+
+    Human Operational Predictive Personal Enhanced Reactor
+    
+═══════════════════════════════════════════════════════════════
+
+                 🤖 Assistant IA Personnel
+              100% Local | 100% Privé | 100% Autonome
+
+═══════════════════════════════════════════════════════════════
+
+📊 STATISTIQUES DU PROJET
+
+  ✅ 30+  Fichiers créés
+  ✅ 2059 Lignes de code (Python + C)
+  ✅ 7    Services microservices
+  ✅ 100+ Pages de documentation
+  ✅ 20+  Endpoints API
+  ✅ 25+  Commandes Makefile
+
+═══════════════════════════════════════════════════════════════
+
+🏗️  ARCHITECTURE
+
+                    ┌─────────────┐
+                    │ UTILISATEUR │
+                    └──────┬──────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+      ┌──▼──┐         ┌───▼───┐        ┌───▼───┐
+      │ CLI │         │ VOIX  │        │  API  │
+      └──┬──┘         └───┬───┘        └───┬───┘
+         │                │                 │
+         └────────────────┼─────────────────┘
+                          │
+              ┌───────────▼───────────┐
+              │   ORCHESTRATEUR       │  Port 5000
+              │  (Python/FastAPI)     │
+              └─┬─────┬─────┬─────┬───┘
+                │     │     │     │
+        ┌───────┼─────┼─────┼─────┼───────┐
+        │       │     │     │     │       │
+     ┌──▼─┐  ┌─▼──┐ ┌▼──┐ ┌▼──┐ ┌▼──┐ ┌─▼──┐
+     │LLM │  │SYS │ │STT│ │TTS│ │AUT│ │CONN│
+     │5001│  │5002│ │5003│ │5004│ │5005│ │5006│
+     └────┘  └────┘ └───┘ └───┘ └───┘ └────┘
+      C++      C     Py    Py    Py     Py
+
+═══════════════════════════════════════════════════════════════
+
+⚡ DÉMARRAGE RAPIDE
+
+  1️⃣  Installation
+     $ ./install.sh
+
+  2️⃣  Démarrage
+     $ make start
+
+  3️⃣  Test
+     $ python3 hopper-cli.py -i
+
+═══════════════════════════════════════════════════════════════
+
+🎯 FONCTIONNALITÉS
+
+  ✅ Compréhension du langage naturel (LLM)
+  ✅ Exécution d'actions système (Fichiers, Apps)
+  ✅ Interface en ligne de commande interactive
+  ✅ Reconnaissance vocale (Whisper)
+  ✅ Synthèse vocale naturelle
+  ✅ Authentification vocale/faciale
+  ✅ Gestion du contexte conversationnel
+  ✅ Architecture microservices modulaire
+
+  🔜 Intégrations email, calendrier, IoT (Phase 2)
+  🔜 Apprentissage autonome (Phase 3)
+  🔜 Interface graphique (Phase 5)
+
+═══════════════════════════════════════════════════════════════
+
+🛠️  TECHNOLOGIES
+
+  Backend:       Python 3.11, C, C++
+  Framework:     FastAPI, Docker Compose
+  IA/ML:         llama.cpp, Whisper, FAISS
+  Infrastructure: Docker, REST APIs, SQLite
+
+═══════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION
+
+  📖 README.md          - Guide principal
+  🏗️  ARCHITECTURE.md    - Architecture détaillée
+  ⚡ QUICKSTART.md      - Démarrage rapide
+  🔧 DEVELOPMENT.md     - Guide développeur
+  🤝 CONTRIBUTING.md    - Guide de contribution
+  📋 CHANGELOG.md       - Historique des versions
+  🎯 PHASE1_COMPLETE.md - Résumé Phase 1
+
+═══════════════════════════════════════════════════════════════
+
+🎯 EXEMPLES D'UTILISATION
+
+  # Questions
+  $ hopper "Quelle est la capitale de la France?"
+  $ hopper "Explique-moi le machine learning"
+
+  # Actions système
+  $ hopper "Crée un fichier notes.txt"
+  $ hopper "Ouvre l'application Calculatrice"
+  $ hopper "Liste les fichiers du répertoire Documents"
+
+  # Mode interactif
+  $ hopper -i
+  Vous: Bonjour HOPPER
+  HOPPER: Bonjour ! Comment puis-je vous aider ?
+
+═══════════════════════════════════════════════════════════════
+
+🗓️  ROADMAP
+
+  ✅ Phase 1 (M1-2):   Infrastructure microservices
+  ⏳ Phase 2 (M3-4):   Intégrations (email, voix, IoT)
+  ⏳ Phase 3 (M5-6):   Intelligence (RAG, apprentissage)
+  ⏳ Phase 4 (M7-8):   Sécurité avancée
+  ⏳ Phase 5 (M9-12):  Optimisations, GUI
+
+═══════════════════════════════════════════════════════════════
+
+📞 CONTACT
+
+  GitHub:  github.com/jilani-BLK
+  Project: H.O.P.P.E.R
+  Version: 0.1.0-alpha
+  License: MIT
+
+═══════════════════════════════════════════════════════════════
+
+            ⭐ Donnez une étoile sur GitHub ! ⭐
+         Contribuez au projet - Toute aide bienvenue !
+
+═══════════════════════════════════════════════════════════════
+
+                    Créé avec ❤️  en 2025
+                  Assistant IA du futur, dès aujourd'hui
+
