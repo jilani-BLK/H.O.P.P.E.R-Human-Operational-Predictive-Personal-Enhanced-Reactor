@@ -4,7 +4,7 @@ Base de connaissances vectorielle avec FAISS et Sentence Transformers
 Phase 2: RAG (Retrieval-Augmented Generation)
 """
 
-import faiss  # type: ignore[import-not-found]
+import faiss  # type: ignore[import-not-found,import-untyped]
 import numpy as np  # type: ignore[import-not-found]
 from typing import List, Tuple, Optional
 from loguru import logger
@@ -103,8 +103,8 @@ class KnowledgeBase:
             # Normaliser pour similarité cosine
             faiss.normalize_L2(embeddings)
             
-            # Ajouter à l'index
-            self.index.add(embeddings)
+            # Ajouter à l'index FAISS
+            self.index.add(embeddings.astype('float32'))  # type: ignore[call-arg]
             
             # Stocker textes
             self.texts.extend(texts)
@@ -158,7 +158,7 @@ class KnowledgeBase:
             
             # Recherche
             k_search = min(k, len(self.texts))
-            scores, indices = self.index.search(query_embedding, k_search)
+            scores, indices = self.index.search(query_embedding.astype('float32'), k_search)  # type: ignore[call-arg]
             
             # Filtrer par threshold et formater résultats
             results = [
