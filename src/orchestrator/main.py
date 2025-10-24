@@ -34,16 +34,6 @@ except ImportError:
     learning_enabled = False
     LearningMiddleware = None
 
-# Import neural monitoring
-try:
-    from neural_monitor import init_neural_monitor, get_neural_monitor
-    neural_monitoring_enabled = True
-except ImportError:
-    logger.warning("⚠️ Neural monitoring non disponible")
-    neural_monitoring_enabled = False
-    init_neural_monitor = None  # type: ignore[assignment]
-    get_neural_monitor = None  # type: ignore[assignment]
-
 # Import coordination hub
 try:
     from coordination_hub import (
@@ -109,25 +99,7 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Modules core enregistrés dans le hub")
     
     # ============================================
-    # 2. Initialiser neural monitoring
-    # ============================================
-    neural_monitor = None
-    if neural_monitoring_enabled and init_neural_monitor:
-        neural_monitor = init_neural_monitor(enabled=True)
-        await neural_monitor.start()
-        logger.info("✅ Neural monitoring activé")
-        
-        # Enregistrer dans le hub
-        if coordination_hub:
-            coordination_hub.register_module(
-                "neural_monitor",
-                ModuleType.MONITORING,
-                neural_monitor,
-                []
-            )
-    
-    # ============================================
-    # 3. Enregistrer les services
+    # 2. Enregistrer les services
     # ============================================
     await service_registry.register_services()
     health_status = await service_registry.check_all_health()
@@ -180,8 +152,6 @@ async def lifespan(app: FastAPI):
     await service_registry.close_all()
     if cleanup_task:
         cleanup_task.cancel()
-    if neural_monitor:
-        await neural_monitor.stop()
 
 
 # Initialisation de l'application FastAPI
@@ -262,15 +232,6 @@ async def process_command(request: CommandRequest, req: Request):
         
         logger.info(f"📥 Commande reçue: '{request.text}' (user: {user_id})")
         
-        # Émettre activité neuronale - Input
-        neural_monitor = get_neural_monitor() if get_neural_monitor else None
-        if neural_monitor:
-            await neural_monitor.emit_neural_activity(
-                "input",
-                intensity=1.0,
-                metadata={"text": request.text[:50], "user": user_id}
-            )
-        
         # Mise à jour du contexte
         if request.context:
             context_manager.update_context(user_id, request.context)
@@ -279,9 +240,6 @@ async def process_command(request: CommandRequest, req: Request):
         current_context = context_manager.get_context(user_id)
         
         # Dispatch de la commande
-        if neural_monitor:
-            await neural_monitor.emit_neural_activity("dispatch", intensity=1.2)
-        
         result = await intent_dispatcher.dispatch(
             text=request.text,
             user_id=user_id,

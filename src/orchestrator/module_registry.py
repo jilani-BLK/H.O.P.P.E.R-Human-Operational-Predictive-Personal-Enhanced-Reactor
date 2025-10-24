@@ -193,16 +193,6 @@ class ModuleRegistry:
         },
         
         # ============================================
-        # MONITORING - Monitoring et métriques
-        # ============================================
-        "neural_monitor": {
-            "type": ModuleType.MONITORING,
-            "path": "src.orchestrator.neural_monitor",
-            "class": "NeuralActivityMonitor",
-            "dependencies": []
-        },
-        
-        # ============================================
         # SYSTEM - Exécution système et fichiers
         # ============================================
         "system_tools": {
