@@ -44,6 +44,24 @@ except ImportError:
     init_neural_monitor = None  # type: ignore[assignment]
     get_neural_monitor = None  # type: ignore[assignment]
 
+# Import coordination hub
+try:
+    from coordination_hub import (
+        initialize_hub,
+        get_hub,
+        ModuleType,
+        register_core_module,
+        register_llm_module
+    )
+    from module_registry import register_all_hopper_modules
+    coordination_hub_enabled = True
+except ImportError:
+    logger.warning("⚠️ Coordination Hub non disponible")
+    coordination_hub_enabled = False
+    initialize_hub = None  # type: ignore[assignment]
+    get_hub = None  # type: ignore[assignment]
+    register_all_hopper_modules = None  # type: ignore[assignment]
+
 try:
     from .config import settings
 except ImportError:
@@ -75,17 +93,75 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Démarrage de HOPPER Orchestrator")
     
-    # Initialiser neural monitoring
+    # ============================================
+    # 1. Initialiser le Coordination Hub
+    # ============================================
+    coordination_hub = None
+    if coordination_hub_enabled and initialize_hub:
+        coordination_hub = initialize_hub()
+        logger.info("🎯 Coordination Hub initialisé")
+        
+        # Enregistrer les modules core
+        register_core_module("context_manager", context_manager)
+        register_core_module("service_registry", service_registry)
+        register_core_module("intent_dispatcher", intent_dispatcher, ["service_registry", "context_manager"])
+        
+        logger.info("✅ Modules core enregistrés dans le hub")
+    
+    # ============================================
+    # 2. Initialiser neural monitoring
+    # ============================================
     neural_monitor = None
     if neural_monitoring_enabled and init_neural_monitor:
         neural_monitor = init_neural_monitor(enabled=True)
         await neural_monitor.start()
         logger.info("✅ Neural monitoring activé")
+        
+        # Enregistrer dans le hub
+        if coordination_hub:
+            coordination_hub.register_module(
+                "neural_monitor",
+                ModuleType.MONITORING,
+                neural_monitor,
+                []
+            )
     
+    # ============================================
+    # 3. Enregistrer les services
+    # ============================================
     await service_registry.register_services()
     health_status = await service_registry.check_all_health()
     logger.info(f"État des services: {health_status}")
-    logger.success("✅ HOPPER Orchestrator prêt")
+    
+    # Enregistrer les services dans le hub
+    if coordination_hub:
+        for service_name, service_data in service_registry.services.items():
+            if hasattr(service_data, 'url'):
+                coordination_hub.register_module(
+                    service_name,
+                    ModuleType.CORE,  # Ou déterminer le type selon le service
+                    service_data,
+                    []
+                )
+    
+    # ============================================
+    # 4. Enregistrer tous les modules HOPPER
+    # ============================================
+    if coordination_hub and register_all_hopper_modules:
+        await register_all_hopper_modules()
+        logger.info("🔗 Tous les modules HOPPER enregistrés et coordonnés")
+    
+    # ============================================
+    # 5. Initialiser tous les modules
+    # ============================================
+    if coordination_hub:
+        await coordination_hub.initialize_all()
+        
+        # Afficher statistiques
+        stats = coordination_hub.get_statistics()
+        logger.info(f"📊 Hub: {stats['total_modules']} modules, {stats['modules_by_type']}")
+    
+    logger.success("✅ HOPPER Orchestrator prêt - Tous les modules coordonnés")
     
     # Lancer cleanup task rate limiter
     cleanup_task = None
@@ -96,6 +172,11 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("🛑 Arrêt de HOPPER Orchestrator")
+    
+    # Arrêter via le hub
+    if coordination_hub:
+        await coordination_hub.shutdown_all()
+    
     await service_registry.close_all()
     if cleanup_task:
         cleanup_task.cancel()
