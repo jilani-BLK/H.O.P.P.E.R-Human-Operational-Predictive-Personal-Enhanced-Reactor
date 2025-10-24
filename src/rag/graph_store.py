@@ -2,7 +2,7 @@
 GraphRAG - Neo4j knowledge graph integration
 Enriched with entity extraction and multi-hop queries
 """
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase  # type: ignore[import-untyped,import-not-found]
 from typing import Optional, List, Dict, Any
 import os
 from src.rag.entity_extractor import EntityExtractor, Entity, EntityType

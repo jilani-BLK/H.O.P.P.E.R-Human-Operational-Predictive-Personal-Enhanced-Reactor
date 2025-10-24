@@ -4,7 +4,7 @@ Implémentation des opérations système pour macOS
 """
 
 import subprocess
-import psutil
+import psutil  # type: ignore[import-untyped,import-not-found]
 import platform
 import os
 from pathlib import Path

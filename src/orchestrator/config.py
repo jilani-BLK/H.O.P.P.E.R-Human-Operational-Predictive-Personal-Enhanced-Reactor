@@ -2,7 +2,10 @@
 Configuration de l'orchestrateur
 """
 
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings  # type: ignore[import-untyped]
+except ImportError:
+    from pydantic import BaseSettings  # type: ignore[attr-defined,import-not-found]
 
 
 class Settings(BaseSettings):

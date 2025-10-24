@@ -537,7 +537,7 @@ class LocalSystemConnector(BaseConnector):
     
     async def _get_system_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Informations système"""
-        import psutil
+        import psutil  # type: ignore[import-untyped,import-not-found]
         
         return {
             "os": platform.system(),
