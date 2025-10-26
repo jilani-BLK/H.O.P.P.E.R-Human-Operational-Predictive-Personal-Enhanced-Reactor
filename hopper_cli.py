@@ -2,7 +2,6 @@
 """
 HOPPER CLI - Interface en ligne de commande (Version Simplifiée)
 Utilisation: hopper "votre commande"
-Utilisation streaming: hopper --stream "votre commande"
 """
 
 import sys
@@ -17,102 +16,6 @@ class HopperCLI:
     
     def __init__(self, base_url="http://localhost:5050"):
         self.base_url = base_url
-    
-    def process_command_streaming(self, text: str, user_id: str = "cli_user"):
-        """
-        Envoie une commande avec streaming de pensées
-        
-        Args:
-            text: Texte de la commande
-            user_id: ID utilisateur
-        """
-        try:
-            print(f"\n🤖 HOPPER > {text}")
-            print("─" * 60)
-            
-            response = requests.post(
-                f"{self.base_url}/command/stream",
-                json={
-                    "text": text,
-                    "user_id": user_id
-                },
-                stream=True,
-                timeout=60
-            )
-            
-            if response.status_code != 200:
-                print(f"❌ Erreur HTTP {response.status_code}")
-                return {
-                    "success": False,
-                    "message": f"Erreur HTTP {response.status_code}"
-                }
-            
-            final_response = None
-            
-            # Lire le flux SSE
-            for line in response.iter_lines():
-                if line:
-                    line_str = line.decode('utf-8')
-                    
-                    if line_str.startswith("data: "):
-                        # Extraire le JSON
-                        json_str = line_str[6:]
-                        try:
-                            thought = json.loads(json_str)
-                            
-                            thought_type = thought.get("type", "")
-                            message = thought.get("message", "")
-                            
-                            # Afficher la pensée avec emoji
-                            emoji_map = {
-                                "analyzing": "🔍",
-                                "thinking": "🤔",
-                                "searching": "📚",
-                                "generating": "💭",
-                                "executing": "⚙️",
-                                "learning": "📖",
-                                "done": "✅",
-                                "error": "❌",
-                                "response": "💬"
-                            }
-                            
-                            emoji = emoji_map.get(thought_type, "💡")
-                            
-                            # Afficher selon le type
-                            if thought_type == "response":
-                                # La réponse finale
-                                print("─" * 60)
-                                print(f"\n{message}\n")
-                                final_response = message
-                            elif thought_type == "error":
-                                print(f"{emoji} ERREUR: {message}")
-                            elif thought_type == "done":
-                                # Ne rien afficher pour "done" car on a déjà la réponse
-                                pass
-                            else:
-                                # Pensée intermédiaire
-                                print(f"{emoji} {message}")
-                                
-                        except json.JSONDecodeError:
-                            pass
-            
-            return {
-                "success": True,
-                "message": final_response or "Commande traitée"
-            }
-            
-        except requests.exceptions.ConnectionError:
-            print("❌ Impossible de se connecter à HOPPER")
-            return {
-                "success": False,
-                "message": "Connection error"
-            }
-        except Exception as e:
-            print(f"❌ Erreur: {str(e)}")
-            return {
-                "success": False,
-                "message": str(e)
-            }
         
     def process_command(self, text: str, user_id: str = "cli_user"):
         """
@@ -200,11 +103,6 @@ def main():
         '-i', '--interactive',
         action='store_true',
         help='Mode interactif'
-    )
-    parser.add_argument(
-        '-s', '--stream',
-        action='store_true',
-        help='Mode streaming (affiche les pensées de HOPPER en temps réel)'
     )
     parser.add_argument(
         '-u', '--user',
@@ -295,23 +193,19 @@ def main():
                     continue
                 
                 # Traiter la commande normale
-                if args.stream:
-                    result = cli.process_command_streaming(command, args.user)
-                else:
-                    result = cli.process_command(command, args.user)
+                result = cli.process_command(command, args.user)
                 
-                # Afficher la réponse (seulement si pas en mode streaming car déjà affiché)
-                if not args.stream:
-                    if result.get("success"):
-                        print(f"🤖 HOPPER: {result.get('message', '')}")
-                        
-                        if args.debug and result.get("data"):
-                            print(f"   📊 Données: {json.dumps(result['data'], indent=2)}")
-                        
-                        if result.get("actions"):
-                            print(f"   ⚡ Actions: {', '.join(result['actions'])}")
-                        
-                        # Feedback demandé ?
+                # Afficher la réponse
+                if result.get("success"):
+                    print(f"🤖 HOPPER: {result.get('message', '')}")
+                    
+                    if args.debug and result.get("data"):
+                        print(f"   📊 Données: {json.dumps(result['data'], indent=2)}")
+                    
+                    if result.get("actions"):
+                        print(f"   ⚡ Actions: {', '.join(result['actions'])}")
+                    
+                    # Feedback demandé ?
                     if result.get("data", {}).get("feedback_requested"):
                         print(f"\n💭 {result['data'].get('feedback_prompt', 'Comment était cette interaction ?')}")
                         print("   Tapez: feedback <1-5>")
@@ -329,33 +223,25 @@ def main():
     
     elif args.command:
         # Mode commande unique
-        if args.stream:
-            result = cli.process_command_streaming(args.command, args.user)
-        else:
-            result = cli.process_command(args.command, args.user)
+        result = cli.process_command(args.command, args.user)
         
-        # Afficher la réponse (seulement si pas en streaming car déjà affiché)
-        if not args.stream:
-            if result.get("success"):
-                print(f"{result.get('message', '')}")
-                
-                if args.debug:
-                    if result.get("data"):
-                        print(f"\n📊 Données: {json.dumps(result['data'], indent=2)}")
-                    if result.get("actions"):
-                        print(f"⚡ Actions: {', '.join(result['actions'])}")
-                
-                # Feedback demandé ?
-                if result.get("data", {}).get("feedback_requested"):
-                    print(f"\n💭 {result['data'].get('feedback_prompt')}")
-                    print(f"   Donnez votre avis: hopper --feedback <1-5>")
-            else:
-                print(f"{result.get('message', 'Erreur inconnue')}")
-                sys.exit(1)
+        # Afficher la réponse
+        if result.get("success"):
+            print(f"{result.get('message', '')}")
+            
+            if args.debug:
+                if result.get("data"):
+                    print(f"\n📊 Données: {json.dumps(result['data'], indent=2)}")
+                if result.get("actions"):
+                    print(f"⚡ Actions: {', '.join(result['actions'])}")
+            
+            # Feedback demandé ?
+            if result.get("data", {}).get("feedback_requested"):
+                print(f"\n💭 {result['data'].get('feedback_prompt')}")
+                print(f"   Donnez votre avis: hopper --feedback <1-5>")
         else:
-            # En mode streaming, vérifier si la commande a réussi
-            if not result.get("success"):
-                sys.exit(1)
+            print(f"{result.get('message', 'Erreur inconnue')}")
+            sys.exit(1)
     
     else:
         # Aucune commande

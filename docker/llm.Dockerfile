@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     git \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Installation de llama.cpp et ses bindings Python

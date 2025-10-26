@@ -39,31 +39,31 @@ class ModuleRegistry:
         # ============================================
         "context_manager": {
             "type": ModuleType.CORE,
-            "path": "src.orchestrator.core.context_manager",
+            "path": "core.context_manager",
             "class": "ContextManager",
             "dependencies": []
         },
         "service_registry": {
             "type": ModuleType.CORE,
-            "path": "src.orchestrator.core.service_registry",
+            "path": "core.service_registry",
             "class": "ServiceRegistry",
             "dependencies": []
         },
         "intent_dispatcher": {
             "type": ModuleType.CORE,
-            "path": "src.orchestrator.core.dispatcher",
+            "path": "core.dispatcher",
             "class": "IntentDispatcher",
             "dependencies": ["service_registry", "context_manager"]
         },
         "unified_dispatcher": {
             "type": ModuleType.CORE,
-            "path": "src.orchestrator.core.unified_dispatcher",
+            "path": "core.unified_dispatcher",
             "class": "UnifiedDispatcher",
             "dependencies": ["self_rag", "hyde"]
         },
         "prompt_builder": {
             "type": ModuleType.CORE,
-            "path": "src.orchestrator.core.prompt_builder",
+            "path": "core.prompt_builder",
             "class": "PromptBuilder",
             "dependencies": []
         },
@@ -87,6 +87,12 @@ class ModuleRegistry:
             "type": ModuleType.RAG,
             "path": "src.rag.hyde",
             "class": "HyDE",
+            "dependencies": []
+        },
+        "entity_extractor": {
+            "type": ModuleType.RAG,
+            "path": "src.rag.entity_extractor",
+            "class": "EntityExtractor",
             "dependencies": []
         },
         
@@ -159,6 +165,12 @@ class ModuleRegistry:
             "class": "ActionNarrator",
             "dependencies": []
         },
+        "async_narrator": {
+            "type": ModuleType.COMMUNICATION,
+            "path": "src.communication.async_narrator",
+            "class": "AsyncNarrator",
+            "dependencies": []
+        },
         
         # ============================================
         # LEARNING - Apprentissage continu
@@ -173,6 +185,22 @@ class ModuleRegistry:
             "type": ModuleType.LEARNING,
             "path": "src.learning.preference_learner",
             "class": "PreferenceLearner",
+            "dependencies": []
+        },
+        "memory_manager": {
+            "type": ModuleType.LEARNING,
+            "path": "src.learning.memory_manager",
+            "class": "MemoryManager",
+            "dependencies": []
+        },
+        
+        # ============================================
+        # MONITORING - Monitoring et métriques
+        # ============================================
+        "neural_monitor": {
+            "type": ModuleType.MONITORING,
+            "path": "src.learning.neural_monitor",
+            "class": "NeuralMonitor",
             "dependencies": []
         },
         
@@ -213,10 +241,70 @@ class ModuleRegistry:
         self.registered_modules: Dict[str, Any] = {}
         self.failed_modules: Dict[str, str] = {}
     
+    def _create_instance(self, module_name: str, module_class: type) -> Optional[Any]:
+        """
+        Crée une instance de module avec les paramètres appropriés
+        
+        Args:
+            module_name: Nom du module
+            module_class: Classe du module
+        
+        Returns:
+            Instance du module ou None si impossible
+        """
+        try:
+            # Modules sans paramètres
+            simple_modules = {
+                "self_rag", "hyde", "graph_rag", "entity_extractor", "prompt_builder",
+                "permission_manager", "confirmation_engine", "audit_logger",
+                "action_narrator", "async_narrator",
+                "validation_system", "preference_learner", "memory_manager",
+                "code_executor", "planner", "malware_detector",
+                "neural_monitor"
+            }
+            
+            if module_name in simple_modules:
+                return module_class()
+            
+            # Modules nécessitant des paramètres spécifiques
+            if module_name == "unified_dispatcher":
+                # UnifiedDispatcher nécessite service_registry
+                # On le créera plus tard avec les bonnes dépendances
+                return None
+            
+            elif module_name == "react_agent":
+                # ReActAgent nécessite LLM client
+                # Pour l'instant, on peut le créer sans (il se connectera au service)
+                try:
+                    return module_class()
+                except TypeError:
+                    return None
+            
+            elif module_name == "chain_of_thought":
+                # ChainOfThought nécessite LLM client
+                return None
+            
+            elif module_name in ["voice_pipeline", "voice_cloner"]:
+                # Modules voice nécessitent configuration
+                return None
+            
+            elif module_name in ["system_tools", "filesystem_tools"]:
+                # Modules system tools nécessitent configuration
+                return None
+            
+            # Par défaut, tenter sans paramètres
+            return module_class()
+            
+        except Exception as e:
+            logger.debug(f"   ⚠️ Impossible de créer {module_name}: {e}")
+            return None
+    
     def register_all_modules(self):
         """
         Enregistre tous les modules dans le hub de coordination
-        Assure que rien n'est isolé du noyau
+        
+        IMPORTANT: Certains modules sont dans d'autres services Docker.
+        On les enregistre comme "remote modules" avec leur service URL.
         """
         if not hub_available:
             logger.warning("⚠️ Hub non disponible - enregistrement ignoré")
@@ -228,46 +316,113 @@ class ModuleRegistry:
         
         registered_count = 0
         failed_count = 0
+        skipped_count = 0
+        remote_count = 0
+        
+        # Modules déjà enregistrés dans main.py (éviter duplicata)
+        already_registered = {"context_manager", "service_registry", "intent_dispatcher"}
+        
+        # Modules hébergés dans d'autres services (enregistrement remote)
+        remote_modules = {
+            # Modules RAG dans le service LLM
+            "self_rag": "llm",
+            "hyde": "llm",
+            "graph_rag": "llm",
+            "entity_extractor": "llm",
+            
+            # Agent dans le service LLM
+            "react_agent": "llm",
+            
+            # Reasoning dans le service LLM
+            "code_executor": "llm",
+            "chain_of_thought": "llm",
+            "planner": "llm",
+            
+            # Security dans le service Auth
+            "permission_manager": "auth",
+            "malware_detector": "auth",
+            "confirmation_engine": "auth",
+            "audit_logger": "auth",
+            
+            # Voice dans les services STT/TTS
+            "voice_pipeline": "stt",
+            "voice_cloner": "tts",
+            
+            # System dans le service System Executor
+            "system_tools": "system_executor",
+            "filesystem_tools": "system_executor",
+        }
         
         for module_name, module_def in self.MODULE_DEFINITIONS.items():
+            # Éviter de réenregistrer les modules core déjà enregistrés
+            if module_name in already_registered:
+                logger.debug(f"   ⏭️  {module_name}: déjà enregistré (core)")
+                skipped_count += 1
+                continue
+            
+            module_type = module_def["type"]
+            dependencies = module_def["dependencies"]
+            
+            # Si le module est remote, enregistrer comme placeholder
+            if module_name in remote_modules:
+                service_name = remote_modules[module_name]
+                
+                # Créer un placeholder pour module distant
+                class RemoteModulePlaceholder:
+                    def __init__(self, name, service):
+                        self.name = name
+                        self.service = service
+                        self.remote = True
+                    
+                    def __repr__(self):
+                        return f"<RemoteModule {self.name} @ {self.service}>"
+                
+                instance = RemoteModulePlaceholder(module_name, service_name)
+                hub.register_module(module_name, module_type, instance, dependencies)
+                
+                self.registered_modules[module_name] = instance
+                registered_count += 1
+                remote_count += 1
+                logger.debug(f"   🌐 {module_name} enregistré (remote @ {service_name})")
+                continue
+            
+            # Sinon, tenter import local
             try:
-                # Tenter d'importer et d'instancier le module
                 module_path = module_def["path"]
                 class_name = module_def["class"]
-                module_type = module_def["type"]
-                dependencies = module_def["dependencies"]
                 
-                # Import du module
+                # Import du module (peut échouer si pas dans ce container)
                 try:
                     module = importlib.import_module(module_path)
                     module_class = getattr(module, class_name)
                     
-                    # Instancier (attention: certains modules peuvent nécessiter des paramètres)
-                    try:
-                        instance = module_class()
-                    except TypeError:
-                        # Si le constructeur nécessite des arguments, utiliser None comme placeholder
-                        instance = None
-                        logger.debug(f"   ⚠️ {module_name}: instance placeholder (constructeur avec args)")
+                    # Instancier selon le type de module
+                    instance = self._create_instance(module_name, module_class)
                     
-                    # Enregistrer dans le hub
-                    hub.register_module(module_name, module_type, instance, dependencies)
-                    
-                    self.registered_modules[module_name] = instance
-                    registered_count += 1
-                    logger.debug(f"   ✅ {module_name} enregistré")
+                    if instance is not None:
+                        # Enregistrer dans le hub
+                        hub.register_module(module_name, module_type, instance, dependencies)
+                        
+                        self.registered_modules[module_name] = instance
+                        registered_count += 1
+                        logger.debug(f"   ✅ {module_name} enregistré (local)")
+                    else:
+                        # Instance placeholder (module nécessite initialisation complexe)
+                        self.failed_modules[module_name] = "Nécessite initialisation complexe"
+                        failed_count += 1
+                        logger.debug(f"   ⚠️ {module_name}: nécessite initialisation spécifique")
                     
                 except ImportError as e:
-                    self.failed_modules[module_name] = f"Import error: {e}"
+                    self.failed_modules[module_name] = f"Import error: {str(e)[:50]}"
                     failed_count += 1
-                    logger.debug(f"   ⏭️  {module_name}: module non disponible")
+                    logger.debug(f"   ⏭️  {module_name}: module non disponible localement")
                     
             except Exception as e:
-                self.failed_modules[module_name] = str(e)
+                self.failed_modules[module_name] = str(e)[:100]
                 failed_count += 1
-                logger.error(f"   ❌ {module_name}: {e}")
+                logger.debug(f"   ⚠️ {module_name}: {str(e)[:50]}")
         
-        logger.info(f"✅ Enregistrement terminé: {registered_count} modules, {failed_count} non disponibles")
+        logger.info(f"✅ Enregistrement terminé: {registered_count} nouveaux ({remote_count} remote, {registered_count - remote_count} local), {skipped_count} existants, {failed_count} non disponibles")
         
         # Afficher le graphe de dépendances
         self._log_dependency_graph()

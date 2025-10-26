@@ -120,7 +120,7 @@ async def lifespan(app: FastAPI):
     # 4. Enregistrer tous les modules HOPPER
     # ============================================
     if coordination_hub and register_all_hopper_modules:
-        await register_all_hopper_modules()
+        register_all_hopper_modules()  # Fonction synchrone, pas async
         logger.info("🔗 Tous les modules HOPPER enregistrés et coordonnés")
     
     # ============================================

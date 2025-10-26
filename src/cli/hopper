@@ -138,6 +138,115 @@ def stop_hopper():
     except:
         print(f"{Colors.RED}❌ Erreur lors de l'arrêt{Colors.END}")
 
+def speak_text(project_root, text):
+    """Fait parler HOPPER avec sa voix clonée"""
+    if not text:
+        print(f"{Colors.RED}❌ Veuillez fournir un texte à dire{Colors.END}")
+        print(f"{Colors.YELLOW}   Exemple: hopper speak \"Bonjour, je suis HOPPER\"{Colors.END}")
+        return 1
+    
+    # Joindre le texte
+    full_text = " ".join(text)
+    
+    print(f"{Colors.CYAN}🎙️  HOPPER dit: {Colors.BOLD}{full_text}{Colors.END}")
+    print()
+    
+    # Utiliser le venv TTS
+    venv_tts_python = project_root / "venv_tts" / "bin" / "python"
+    
+    if not venv_tts_python.exists():
+        print(f"{Colors.RED}❌ Environment TTS non trouvé (venv_tts){Colors.END}")
+        print(f"{Colors.YELLOW}   Installez-le avec: python3.11 -m venv venv_tts && venv_tts/bin/pip install TTS{Colors.END}")
+        return 1
+    
+    # Créer un script temporaire pour générer et jouer
+    temp_script = f"""
+import sys
+from pathlib import Path
+import torch
+import subprocess
+
+project_root = Path("{project_root}")
+sys.path.insert(0, str(project_root))
+
+# Fix PyTorch 2.9+
+original_torch_load = torch.load
+def patched_torch_load(*args, **kwargs):
+    kwargs['weights_only'] = False
+    return original_torch_load(*args, **kwargs)
+torch.load = patched_torch_load
+
+try:
+    from TTS.api import TTS
+except ImportError:
+    print("❌ TTS non installé")
+    sys.exit(1)
+
+# Échantillon vocal
+voice_sample_ultra = project_root / "Hopper_voix_ultra_clean.wav"
+voice_sample_clean = project_root / "Hopper_voix_clean.wav"
+voice_sample_24k = project_root / "Hopper_voix_24k.wav"
+voice_sample_hq = project_root / "Hopper_voix_hq.wav"
+voice_sample_mp3 = project_root / "Hopper_voix.wav.mp3"
+
+if voice_sample_ultra.exists():
+    voice_sample = voice_sample_ultra
+elif voice_sample_clean.exists():
+    voice_sample = voice_sample_clean
+elif voice_sample_24k.exists():
+    voice_sample = voice_sample_24k
+elif voice_sample_hq.exists():
+    voice_sample = voice_sample_hq
+elif voice_sample_mp3.exists():
+    voice_sample = voice_sample_mp3
+else:
+    print("❌ Échantillon vocal non trouvé")
+    sys.exit(1)
+
+# Charger TTS
+print("📥 Chargement du modèle vocal...")
+device = "cpu"
+tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+print("✅ Prêt\\n")
+
+# Générer
+output_file = project_root / "data" / "hopper_speak_temp.wav"
+output_file.parent.mkdir(parents=True, exist_ok=True)
+
+print("🎙️  Génération...")
+tts.tts_to_file(
+    text='''{full_text}''',
+    speaker_wav=str(voice_sample),
+    language="fr",
+    file_path=str(output_file),
+    temperature=0.65,
+    length_penalty=1.0,
+    repetition_penalty=2.5,
+    top_k=30,
+    top_p=0.75,
+    speed=0.9,
+    enable_text_splitting=True,
+    split_sentences=True
+)
+
+print("▶️  Lecture...\\n")
+subprocess.run(['afplay', str(output_file)])
+print("✅ Terminé")
+"""
+    
+    # Exécuter le script
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        f.write(temp_script)
+        temp_path = f.name
+    
+    try:
+        subprocess.run([str(venv_tts_python), temp_path])
+    finally:
+        Path(temp_path).unlink()
+    
+    return 0
+
 def main():
     """Point d'entrée principal"""
     parser = argparse.ArgumentParser(
@@ -145,9 +254,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemples:
-  hopper              Lance l'interface neuronale 3D (défaut)
-  hopper neural       Lance la sphère neuronale intelligente
+  hopper              Lance l'interface terminal (défaut)
   hopper tui          Lance l'interface terminal
+  hopper speak "Bonjour, comment allez-vous ?"
+  hopper voice "Je suis HOPPER, votre assistant"
   hopper start        Démarre uniquement l'orchestrateur
   hopper status       Affiche le statut
   hopper stop         Arrête HOPPER
@@ -158,8 +268,14 @@ Exemples:
         'command',
         nargs='?',
         default='tui',
-        choices=['tui', 'start', 'stop', 'status'],
+        choices=['tui', 'start', 'stop', 'status', 'speak', 'voice'],
         help='Commande à exécuter (défaut: tui)'
+    )
+    
+    parser.add_argument(
+        'text',
+        nargs='*',
+        help='Texte à faire dire par HOPPER (pour speak/voice)'
     )
     
     parser.add_argument(
@@ -191,6 +307,9 @@ Exemples:
         if not args.no_banner:
             print_banner()
         show_status(project_root)
+    
+    elif args.command in ['speak', 'voice']:
+        return speak_text(project_root, args.text)
     
     elif args.command == 'start':
         # Démarrer uniquement l'orchestrateur
