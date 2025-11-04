@@ -18,16 +18,32 @@ Développé en Python et C | Phase 2 complétée et optimisée ✅
 
 ## 🎯 Statut Actuel
 
-**Version**: Phase 2 optimisée (22 Octobre 2025)
+**Version**: Phase 2 validée + Architecture Hybride (4 Novembre 2025)
 
 | Fonctionnalité | Status | Performance |
 |---------------|--------|-------------|
-| Architecture 7 services | ✅ 100% | Latence <10ms |
-| LLM (Mistral-7B) | ✅ Opérationnel | 8-20s (optimisé -25%) |
-| Conversation multi-tour | ✅ Parfait | 50 échanges, contexte maintenu |
-| RAG (Knowledge Base) | ✅ Parfait | 100% précision, 50ms learn |
-| Mode offline | ✅ 100% | Garanti |
-| Tests automatisés | ✅ 53/53 | 100% succès |
+| **Phase 2 Conversationnelle** | ✅ **VALIDÉE 75%** | Taux réussite tests |
+| Architecture 5 services | ✅ 100% | Latence <1s |
+| LLM (llama3.2 2GB) | ✅ Opérationnel | 810ms moyenne |
+| Dispatcher Hybride | ✅ Intelligent | Routing système+LLM |
+| Conversation multi-tour | ✅ Fonctionnel | 10 messages historique |
+| RAG (Knowledge Base) | ✅ Chargée | 25 documents FAISS |
+| CLI v2 Interactif | ✅ 100% | REPL + single-command |
+| Mode offline | ✅ 100% | Ollama local v0.12.6 |
+| Tests automatisés | ✅ 15/20 validés | 75% succès |
+
+### 🎉 Phase 2 Validée (Nouveau)
+
+HOPPER peut maintenant **converser en français de manière naturelle** et **maintenir le contexte** sur plusieurs échanges.
+
+**Architecture Hybride** (Système + LLM):
+- 🎯 **Dispatcher Intelligent**: Routage automatique commandes système vs conversations
+- 🧠 **LLM Local**: llama3.2 (2GB) via Ollama v0.12.6, 100% offline
+- 💬 **Conversations Multi-tour**: Historique 10 messages, contexte maintenu
+- � **Knowledge Base**: 25 documents FAISS, RAG ready
+- 🖥️ **CLI v2**: Mode interactif REPL + single-command
+
+📘 **Documentation**: [`PHASE2_VALIDATION.md`](PHASE2_VALIDATION.md) | 🚀 **Succès**: [`PHASE2_SUCCESS.md`](PHASE2_SUCCESS.md) | 🧪 **Tests**: [`scripts/test/validate_phase2.py`](scripts/test/validate_phase2.py)
 
 📊 [**Rapport Performance Complet**](PERFORMANCE_ANALYSIS.md) | 📈 [**Résultats Optimisation**](OPTIMIZATION_RESULTS.md) | 📋 [**Rapport Final**](FINAL_REPORT.md)
 
@@ -63,22 +79,28 @@ python3 hopper-cli.py -i
 ## Exemples d'Utilisation
 
 ```bash
-# Mode interactif
-python3 hopper-cli.py -i
+# Mode interactif conversationnel (NOUVEAU Phase 2)
+python3 hopper_cli_v2.py
 
-# Commandes système
-hopper "Crée un fichier notes.txt"
-hopper "Ouvre l'application Calculatrice"
+hopper> Bonjour, qui es-tu ?
+🤖 HOPPER: Je suis HOPPER, votre assistant personnel intelligent et local...
+⏱️ 2.1s | 142 tokens
 
-# Questions
-hopper "Explique-moi le machine learning en termes simples"
-hopper "Résume ce document PDF"
+hopper> Que peux-tu faire ?
+🤖 HOPPER: Je peux exécuter des commandes système et répondre à vos questions...
+⏱️ 1.8s | 98 tokens
 
-# Emails (Phase 2)
-hopper "Lis mes nouveaux emails importants"
+# Mode single-command (conversations)
+python3 hopper_cli_v2.py "C'est quoi un LLM ?"
 
-# Contrôle IoT (Phase 2)
-hopper "Allume les lumières du salon"
+# Commandes système (Phase 1)
+python3 hopper_cli_v2.py "liste les fichiers de /tmp"
+python3 hopper_cli_v2.py "crée un fichier notes.txt"
+python3 hopper_cli_v2.py "donne moi la date"
+
+# API REST
+curl -X POST http://localhost:5050/api/v1/command \
+  -d '{"command":"Qui es-tu ?"}'
 ```
 
 ## Architecture
