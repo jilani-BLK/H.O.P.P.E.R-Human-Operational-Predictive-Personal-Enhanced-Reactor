@@ -12,17 +12,16 @@ class Settings(BaseSettings):
     """Paramètres de configuration"""
     
     # Service
-    ORCHESTRATOR_PORT: int = 5000
+    ORCHESTRATOR_PORT: int = 5050  # Phase 1: aligné avec docker-compose
     ORCHESTRATOR_HOST: str = "0.0.0.0"
     LOG_LEVEL: str = "INFO"
     
-    # URLs des services (utiliser noms de containers Docker)
-    LLM_SERVICE_URL: str = "http://hopper-llm:5001"
-    SYSTEM_EXECUTOR_URL: str = "http://hopper-system-executor:5002"
-    STT_SERVICE_URL: str = "http://hopper-stt:5003"
-    TTS_SERVICE_URL: str = "http://hopper-tts:5004"
-    AUTH_SERVICE_URL: str = "http://hopper-auth:5005"
-    CONNECTORS_URL: str = "http://hopper-connectors:5006"
+    # URLs des services
+    # En mode dev local: localhost, en mode Docker: noms de containers
+    LLM_SERVICE_URL: str = "http://localhost:5001"
+    SYSTEM_EXECUTOR_URL: str = "http://localhost:5002"
+    AUTH_SERVICE_URL: str = "http://localhost:5005"
+    CONNECTORS_URL: str = "http://localhost:5006"
     
     # Base de données
     DB_PATH: str = "/data/hopper.db"

@@ -12,10 +12,106 @@ from loguru import logger
 import sys
 import asyncio
 
-from core.dispatcher import IntentDispatcher
 from core.context_manager import ContextManager
 from core.service_registry import ServiceRegistry
 from api.routes import router
+
+# LLM-First Architecture Components
+llm_first_enabled = False
+
+
+# ============================================
+# 🔄 Event Surveillance Loop (Proactive)
+# ============================================
+async def event_surveillance_loop(
+    perception_bus,
+    relevance_engine,
+    proactive_narrator
+):
+    """
+    Boucle de surveillance continue des événements
+    
+    Pipeline:
+    1. Consomme événements du PerceptionBus
+    2. Score pertinence via RelevanceEngine
+    3. Filtre selon seuils et rate limiting
+    4. Génère narration via ProactiveNarrator
+    5. Annonce à l'utilisateur (TTS + log)
+    """
+    
+    logger.info("🔄 Démarrage de la boucle de surveillance continue...")
+    
+    # Subscriber au bus
+    subscriber_id = await perception_bus.subscribe("*")  # Tous les événements
+    
+    while True:
+        try:
+            # Attendre prochain événement (bloquant)
+            event = await perception_bus.get_next_event(timeout=1.0)
+            
+            if not event:
+                await asyncio.sleep(0.1)
+                continue
+            
+            logger.debug(f"📥 Événement reçu: {event.source}/{event.event_type}")
+            
+            # 1. Scorer la pertinence
+            scored_event = await relevance_engine.score_event(event)
+            
+            logger.debug(
+                f"📊 Score: {scored_event.relevance_score.value} "
+                f"({scored_event.score_value:.2f}) - "
+                f"Annonce: {scored_event.should_announce}"
+            )
+            
+            # 2. Filtrer selon should_announce
+            if not scored_event.should_announce:
+                logger.debug(f"⏭️  Événement ignoré (score trop bas)")
+                continue
+            
+            # 3. Rate limiting
+            if relevance_engine.should_rate_limit(scored_event):
+                logger.debug(f"⏸️  Événement rate-limited")
+                continue
+            
+            # 4. Générer narration naturelle
+            user_id = event.target_user or "default"
+            narration = await proactive_narrator.narrate_event(scored_event, user_id)
+            
+            # 5. Logger/Annoncer
+            logger.success(
+                f"📢 ANNONCE PROACTIVE: {narration['message']}"
+            )
+            
+            # TODO: Publier vers WebSocket/SSE pour frontend
+            # TODO: Stocker dans notifications table
+            # TODO: Vérifier consentements avant actions
+            
+            # Attendre un peu entre annonces
+            await asyncio.sleep(0.5)
+        
+        except asyncio.CancelledError:
+            logger.info("🛑 Boucle de surveillance arrêtée")
+            break
+        except Exception as e:
+            logger.error(f"❌ Erreur dans boucle de surveillance: {e}")
+            await asyncio.sleep(1)  # Éviter spam en cas d'erreur
+
+
+
+try:
+    # Architecture LLM-First avec plans JSON - OBLIGATOIRE
+    from core.plan_dispatcher import PlanBasedDispatcher
+    from core.plugin_registry import PluginRegistry
+    from security.credentials_vault import CredentialsVault
+    llm_first_enabled = True
+    logger.info("✅ PlanBasedDispatcher importé (Architecture LLM-First)")
+except ImportError as e:
+    llm_first_enabled = False
+    logger.error(f"❌ ERREUR CRITIQUE: PlanBasedDispatcher non disponible: {e}")
+    PlanBasedDispatcher = None
+    PluginRegistry = None
+    CredentialsVault = None
 
 # Import security middleware
 try:
@@ -74,17 +170,71 @@ logger.add(
 # Gestionnaires globaux
 context_manager = ContextManager()
 service_registry = ServiceRegistry()
-intent_dispatcher = IntentDispatcher(service_registry, context_manager)
+
+# Dispatcher sera initialisé dans lifespan (après service_registry)
+intent_dispatcher = None
+llm_first_dispatcher = None
+perception_bus = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Gestion du cycle de vie de l'application"""
+    global intent_dispatcher, llm_first_dispatcher, perception_bus
+    
     # Startup
-    logger.info("🚀 Démarrage de HOPPER Orchestrator")
+    logger.info("🚀 Démarrage de HOPPER Orchestrator - LLM-First Architecture")
     
     # ============================================
-    # 1. Initialiser le Coordination Hub
+    # 1. Enregistrer les services d'abord
+    # ============================================
+    await service_registry.register_services()
+    health_status = await service_registry.check_all_health()
+    logger.info(f"État des services: {health_status}")
+    
+    # ============================================
+    # 2. Initialiser l'architecture LLM-First (PlanBasedDispatcher)
+    # ============================================
+    if llm_first_enabled and PlanBasedDispatcher and PluginRegistry and CredentialsVault:
+        logger.info("🧠 Initialisation PlanBasedDispatcher (Architecture LLM-First)...")
+        
+        # 2.1 CredentialsVault pour gestion sécurisée des secrets
+        master_password = os.getenv("HOPPER_VAULT_PASSWORD", "hopper_dev_password")
+        credentials_vault = CredentialsVault(
+            vault_path="data/vault.enc",
+            master_password=master_password,
+            use_keychain=True
+        )
+        logger.info("✅ CredentialsVault initialisé")
+        
+        # 2.2 PluginRegistry - Découverte et chargement des tools
+        plugin_registry = PluginRegistry(
+            plugins_dir="src/orchestrator/plugins",
+            credentials_vault=credentials_vault
+        )
+        await plugin_registry.discover_and_load_all()
+        logger.info(f"✅ PluginRegistry initialisé ({len(plugin_registry.tools)} tools)")
+        
+        # 2.3 PlanBasedDispatcher - Orchestrateur principal LLM→JSON→Exécution
+        llm_service_url = os.getenv("LLM_SERVICE_URL", "http://hopper-llm:5001")
+        intent_dispatcher = PlanBasedDispatcher(
+            service_registry=service_registry,
+            plugin_registry=plugin_registry,
+            credentials_vault=credentials_vault,
+            context_manager=context_manager,
+            llm_service_url=llm_service_url
+        )
+        logger.success("✅ PlanBasedDispatcher initialisé - Architecture LLM-First active!")
+        
+        # TODO: Tâche #4 - PerceptionBus, RelevanceEngine, ProactiveNarrator
+    
+    else:
+        # Architecture LLM-First obligatoire - pas de fallback
+        logger.error("❌ Erreur critique: PlanBasedDispatcher non disponible!")
+        raise RuntimeError("Architecture LLM-First requise - vérifier imports et dépendances")
+    
+    # ============================================
+    # 3. Initialiser le Coordination Hub (optionnel)
     # ============================================
     coordination_hub = None
     if coordination_hub_enabled and initialize_hub:
@@ -94,16 +244,10 @@ async def lifespan(app: FastAPI):
         # Enregistrer les modules core
         register_core_module("context_manager", context_manager)
         register_core_module("service_registry", service_registry)
-        register_core_module("intent_dispatcher", intent_dispatcher, ["service_registry", "context_manager"])
+        if intent_dispatcher:
+            register_core_module("intent_dispatcher", intent_dispatcher, ["service_registry", "context_manager"])
         
         logger.info("✅ Modules core enregistrés dans le hub")
-    
-    # ============================================
-    # 2. Enregistrer les services
-    # ============================================
-    await service_registry.register_services()
-    health_status = await service_registry.check_all_health()
-    logger.info(f"État des services: {health_status}")
     
     # Enregistrer les services dans le hub
     if coordination_hub:
@@ -240,6 +384,9 @@ async def process_command(request: CommandRequest, req: Request):
         current_context = context_manager.get_context(user_id)
         
         # Dispatch de la commande
+        if intent_dispatcher is None:
+            raise HTTPException(status_code=503, detail="Dispatcher non initialisé")
+        
         result = await intent_dispatcher.dispatch(
             text=request.text,
             user_id=user_id,

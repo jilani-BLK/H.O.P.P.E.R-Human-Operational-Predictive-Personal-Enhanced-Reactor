@@ -1,257 +1,152 @@
 #!/usr/bin/env python3
 """
-HOPPER CLI - Interface en ligne de commande (Version Simplifiée)
-Utilisation: hopper "votre commande"
+HOPPER CLI - Interface en ligne de commande
+Supporte: commandes directes, mode interactif, mode repos
 """
 
 import sys
-import argparse
 import requests
-import json
-from pathlib import Path
+import time
+from typing import Dict, Any, Optional
 
+ORCHESTRATOR_URL = "http://localhost:5050"
 
-class HopperCLI:
-    """Interface CLI pour HOPPER via l'API"""
+def send_command(command: str) -> Dict[str, Any]:
+    """Envoie une commande à l'orchestrateur"""
+    try:
+        response = requests.post(
+            f"{ORCHESTRATOR_URL}/api/v1/command",
+            json={"command": command},
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"success": False, "error": f"HTTP {response.status_code}"}
+    except requests.exceptions.ConnectionError:
+        return {"success": False, "error": "Impossible de se connecter à HOPPER. Est-il démarré?"}
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "Timeout - la commande a pris trop de temps"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def check_health() -> bool:
+    """Vérifie que HOPPER est accessible"""
+    try:
+        response = requests.get(f"{ORCHESTRATOR_URL}/health", timeout=2)
+        return response.status_code == 200
+    except:
+        return False
+
+def display_result(result: Dict[str, Any], command: str):
+    """Affiche le résultat d'une commande"""
+    print("\n" + "=" * 70)
+    print(f"🎯 Commande: {command}")
+    print("=" * 70)
     
-    def __init__(self, base_url="http://localhost:5050"):
-        self.base_url = base_url
+    if result.get("success"):
+        print("✅ Succès")
         
-    def process_command(self, text: str, user_id: str = "cli_user"):
-        """
-        Envoie une commande à l'orchestrateur
+        if "type" in result:
+            print(f"Type: {result['type']}")
+        if "action" in result:
+            print(f"Action: {result['action']}")
         
-        Args:
-            text: Texte de la commande
-            user_id: ID utilisateur
-        """
-        try:
-            response = requests.post(
-                f"{self.base_url}/command",
-                json={
-                    "text": text,
-                    "user_id": user_id
-                },
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {
-                    "success": False,
-                    "message": f"Erreur HTTP {response.status_code}: {response.text}"
-                }
-                
-        except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "message": "❌ Impossible de se connecter à HOPPER. L'orchestrateur est-il démarré ?",
-                "error": "connection_error"
-            }
-        except requests.exceptions.Timeout:
-            return {
-                "success": False,
-                "message": "❌ Timeout - HOPPER met trop de temps à répondre",
-                "error": "timeout"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "message": f"❌ Erreur: {str(e)}",
-                "error": str(e)
-            }
+        # Réponse LLM ou sortie système
+        if "response" in result:
+            print(f"\n💬 Réponse:\n{result['response']}")
+        elif "output" in result:
+            print(f"\n📤 Sortie:\n{result['output']}")
+        
+        # Métadonnées
+        if "duration_ms" in result:
+            print(f"\n⏱️  Durée: {result['duration_ms']}ms")
+        if "tokens" in result:
+            print(f"🔤 Tokens: {result['tokens']}")
+    else:
+        print("❌ Échec")
+        print(f"Erreur: {result.get('error', 'Erreur inconnue')}")
     
-    def submit_feedback(self, user_id: str, score: int, comment: str | None = None):
-        """Soumet un feedback"""
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/v1/feedback",
-                json={
-                    "user_id": user_id,
-                    "score": score,
-                    "comment": comment
-                },
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"success": False, "message": f"Erreur {response.status_code}"}
-                
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+    print("=" * 70 + "\n")
 
+def mode_sleep():
+    """Mode repos - HOPPER en veille"""
+    print("\n💤 HOPPER en mode repos...")
+    print("Commande 'hopper repos' détectée")
+    print("Simulant mise en veille (placeholder pour future implémentation)")
+    print("\n✅ Mode repos activé\n")
+    return 0
+
+def mode_interactive():
+    """Mode interactif - dialogue continu"""
+    print("\n" + "=" * 70)
+    print("🤖 HOPPER - Mode Interactif")
+    print("=" * 70)
+    print("Tapez vos commandes (Ctrl+C ou 'exit' pour quitter)\n")
+    
+    if not check_health():
+        print("❌ Erreur: HOPPER n'est pas accessible")
+        print("Démarrez-le avec: docker-compose up -d\n")
+        return 1
+    
+    try:
+        while True:
+            try:
+                command = input("🎯 Vous: ").strip()
+            except EOFError:
+                break
+            
+            if not command:
+                continue
+            
+            if command.lower() in ['exit', 'quit', 'q']:
+                print("\n👋 Au revoir!\n")
+                break
+            
+            result = send_command(command)
+            
+            # Affichage simplifié en mode interactif
+            if result.get("success"):
+                if "response" in result:
+                    print(f"🤖 HOPPER: {result['response']}\n")
+                elif "output" in result:
+                    print(f"📤 Sortie:\n{result['output']}\n")
+            else:
+                print(f"❌ Erreur: {result.get('error', 'Inconnue')}\n")
+    
+    except KeyboardInterrupt:
+        print("\n\n👋 Interruption - Au revoir!\n")
+        return 0
+    
+    return 0
+
+def mode_command(command: str):
+    """Mode commande simple"""
+    if not check_health():
+        print("\n❌ Erreur: HOPPER n'est pas accessible")
+        print("Démarrez-le avec: docker-compose up -d\n")
+        return 1
+    
+    result = send_command(command)
+    display_result(result, command)
+    
+    return 0 if result.get("success") else 1
 
 def main():
     """Point d'entrée principal"""
-    parser = argparse.ArgumentParser(
-        description="HOPPER - Assistant Personnel Intelligent",
-        epilog='Exemples:\n'
-               '  hopper "Quel temps fait-il à Paris ?"\n'
-               '  hopper -i                  # Mode interactif\n'
-               '  hopper --feedback 5 "Super !"',
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument(
-        'command',
-        nargs='?',
-        help='Commande à exécuter'
-    )
-    parser.add_argument(
-        '-i', '--interactive',
-        action='store_true',
-        help='Mode interactif'
-    )
-    parser.add_argument(
-        '-u', '--user',
-        default='cli_user',
-        help='ID utilisateur (défaut: cli_user)'
-    )
-    parser.add_argument(
-        '--url',
-        default='http://localhost:5050',
-        help='URL de l\'orchestrateur (défaut: http://localhost:5050)'
-    )
-    parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Mode debug (affiche plus de détails)'
-    )
-    parser.add_argument(
-        '--feedback',
-        type=int,
-        choices=[1, 2, 3, 4, 5],
-        help='Soumettre un feedback (score 1-5)'
-    )
+    args = sys.argv[1:]
     
-    args = parser.parse_args()
-    
-    # Créer l'instance CLI
-    cli = HopperCLI(base_url=args.url)
-    
-    # Mode feedback
-    if args.feedback:
-        result = cli.submit_feedback(
-            user_id=args.user,
-            score=args.feedback,
-            comment=args.command if args.command else None
-        )
-        
-        if result.get("success", True):
-            print(f"✅ Feedback {args.feedback}/5 enregistré")
-        else:
-            print(f"❌ {result.get('message', 'Erreur')}")
-        return
+    # Mode repos
+    if "--sleep" in args:
+        return mode_sleep()
     
     # Mode interactif
-    if args.interactive:
-        print("╔═══════════════════════════════════════════════════════╗")
-        print("║       🎙️  HOPPER - Mode Interactif                   ║")
-        print("╚═══════════════════════════════════════════════════════╝")
-        print()
-        print("Tapez vos commandes. Commandes spéciales:")
-        print("  • 'exit' ou 'quit' - Quitter")
-        print("  • 'feedback N' - Donner un feedback (1-5)")
-        print("  • 'help' - Afficher l'aide")
-        print()
-        
-        while True:
-            try:
-                command = input("🎙️  Vous: ").strip()
-                
-                if command.lower() in ['exit', 'quit', 'q']:
-                    print("\n👋 Au revoir !")
-                    break
-                
-                if not command:
-                    continue
-                
-                if command.lower() == 'help':
-                    print("\n📖 Commandes disponibles:")
-                    print("  • Toute phrase en langage naturel")
-                    print("  • feedback N - Donner un feedback (1-5)")
-                    print("  • exit/quit - Quitter")
-                    print()
-                    continue
-                
-                # Feedback
-                if command.lower().startswith('feedback '):
-                    try:
-                        score = int(command.split()[1])
-                        if 1 <= score <= 5:
-                            result = cli.submit_feedback(args.user, score)
-                            if result.get("success", True):
-                                print(f"✅ Feedback {score}/5 enregistré\n")
-                            else:
-                                print(f"❌ {result.get('message')}\n")
-                        else:
-                            print("❌ Score doit être entre 1 et 5\n")
-                    except (ValueError, IndexError):
-                        print("❌ Usage: feedback <1-5>\n")
-                    continue
-                
-                # Traiter la commande normale
-                result = cli.process_command(command, args.user)
-                
-                # Afficher la réponse
-                if result.get("success"):
-                    print(f"🤖 HOPPER: {result.get('message', '')}")
-                    
-                    if args.debug and result.get("data"):
-                        print(f"   📊 Données: {json.dumps(result['data'], indent=2)}")
-                    
-                    if result.get("actions"):
-                        print(f"   ⚡ Actions: {', '.join(result['actions'])}")
-                    
-                    # Feedback demandé ?
-                    if result.get("data", {}).get("feedback_requested"):
-                        print(f"\n💭 {result['data'].get('feedback_prompt', 'Comment était cette interaction ?')}")
-                        print("   Tapez: feedback <1-5>")
-                else:
-                    print(f"❌ {result.get('message', 'Erreur inconnue')}")
-                
-                print()  # Ligne vide
-                
-            except KeyboardInterrupt:
-                print("\n\n👋 Au revoir !")
-                break
-            except EOFError:
-                print("\n\n👋 Au revoir !")
-                break
+    if "--interactive" in args or len(args) == 0:
+        return mode_interactive()
     
-    elif args.command:
-        # Mode commande unique
-        result = cli.process_command(args.command, args.user)
-        
-        # Afficher la réponse
-        if result.get("success"):
-            print(f"{result.get('message', '')}")
-            
-            if args.debug:
-                if result.get("data"):
-                    print(f"\n📊 Données: {json.dumps(result['data'], indent=2)}")
-                if result.get("actions"):
-                    print(f"⚡ Actions: {', '.join(result['actions'])}")
-            
-            # Feedback demandé ?
-            if result.get("data", {}).get("feedback_requested"):
-                print(f"\n💭 {result['data'].get('feedback_prompt')}")
-                print(f"   Donnez votre avis: hopper --feedback <1-5>")
-        else:
-            print(f"{result.get('message', 'Erreur inconnue')}")
-            sys.exit(1)
-    
-    else:
-        # Aucune commande
-        parser.print_help()
-        sys.exit(1)
-
+    # Mode commande
+    command = " ".join(args)
+    return mode_command(command)
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\n👋 Interruption - Au revoir !")
-        sys.exit(0)
+    sys.exit(main())

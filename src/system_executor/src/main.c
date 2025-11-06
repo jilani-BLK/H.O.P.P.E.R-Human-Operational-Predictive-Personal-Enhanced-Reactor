@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <microhttpd.h>
 #include <cjson/cJSON.h>
 #include <time.h>
@@ -36,7 +37,9 @@ static enum MHD_Result handle_request(void *cls, struct MHD_Connection *connecti
                                      size_t *upload_data_size, void **con_cls);
 ExecutionResult execute_command(const char *command);
 ExecutionResult create_file(const char *path);
+ExecutionResult create_file_with_content(const char *path, const char *content);
 ExecutionResult delete_file(const char *path);
+ExecutionResult list_directory(const char *path);
 ExecutionResult list_directory(const char *path);
 ExecutionResult open_application(const char *app_name);
 char* create_json_response(ExecutionResult result);
@@ -98,13 +101,74 @@ static enum MHD_Result handle_request(void *cls, struct MHD_Connection *connecti
     
     // Route: /execute (POST)
     if (strcmp(url, "/execute") == 0 && strcmp(method, "POST") == 0) {
-        // Pour simplification, on accepte une commande basique
-        // Dans la vraie implémentation, parser le JSON du POST
+        // Gestion du POST en deux phases
+        if (*con_cls == NULL) {
+            // Première phase: allouer un buffer pour stocker le body
+            char *buffer = malloc(8192);
+            if (!buffer) return MHD_NO;
+            buffer[0] = '\0';
+            *con_cls = buffer;
+            return MHD_YES;
+        }
         
+        // Accumuler le body
+        if (*upload_data_size > 0) {
+            char *buffer = *con_cls;
+            size_t current_len = strlen(buffer);
+            size_t available = 8192 - current_len - 1;
+            size_t to_copy = (*upload_data_size < available) ? *upload_data_size : available;
+            
+            strncat(buffer, upload_data, to_copy);
+            *upload_data_size = 0;
+            return MHD_YES;
+        }
+        
+        // Tout le body est reçu, parser le JSON
+        char *body = *con_cls;
         log_message("INFO", "📥 Requête d'exécution reçue");
         
-        // Exemple simple: créer un fichier test
-        result = create_file("/tmp/hopper_test.txt");
+        cJSON *json = cJSON_Parse(body);
+        if (!json) {
+            log_message("ERROR", "❌ JSON invalide");
+            result.success = 0;
+            snprintf(result.message, sizeof(result.message), "Invalid JSON");
+            result.data[0] = '\0';
+            free(body);
+        } else {
+            // Extraire action, path et content
+            cJSON *action_json = cJSON_GetObjectItem(json, "action");
+            cJSON *path_json = cJSON_GetObjectItem(json, "path");
+            cJSON *content_json = cJSON_GetObjectItem(json, "content");
+            
+            if (!action_json || !action_json->valuestring) {
+                log_message("ERROR", "❌ Action manquante");
+                result.success = 0;
+                snprintf(result.message, sizeof(result.message), "Missing action");
+                result.data[0] = '\0';
+            } else {
+                char *action = action_json->valuestring;
+                log_message("INFO", action);
+                
+                if (strcmp(action, "create_file") == 0) {
+                    char *path = path_json && path_json->valuestring ? path_json->valuestring : "/tmp/hopper_default.txt";
+                    char *content = content_json && content_json->valuestring ? content_json->valuestring : "Default content";
+                    result = create_file_with_content(path, content);
+                } else if (strcmp(action, "delete_file") == 0) {
+                    char *path = path_json && path_json->valuestring ? path_json->valuestring : "/tmp/hopper_default.txt";
+                    result = delete_file(path);
+                } else if (strcmp(action, "list_directory") == 0) {
+                    char *path = path_json && path_json->valuestring ? path_json->valuestring : "/tmp";
+                    result = list_directory(path);
+                } else {
+                    result.success = 0;
+                    snprintf(result.message, sizeof(result.message), "Unknown action: %s", action);
+                    result.data[0] = '\0';
+                }
+            }
+            
+            cJSON_Delete(json);
+            free(body);
+        }
         
         char *json_response = create_json_response(result);
         response = MHD_create_response_from_buffer(strlen(json_response),
@@ -131,13 +195,13 @@ static enum MHD_Result handle_request(void *cls, struct MHD_Connection *connecti
 }
 
 /**
- * Crée un fichier
+ * Crée un fichier avec contenu
  */
-ExecutionResult create_file(const char *path) {
+ExecutionResult create_file_with_content(const char *path, const char *content) {
     ExecutionResult result;
     FILE *file;
     
-    log_message("INFO", "Création de fichier");
+    log_message("INFO", "Création de fichier avec contenu");
     
     file = fopen(path, "w");
     if (file == NULL) {
@@ -149,7 +213,7 @@ ExecutionResult create_file(const char *path) {
         return result;
     }
     
-    fprintf(file, "Fichier créé par HOPPER - %ld\n", time(NULL));
+    fprintf(file, "%s", content);
     fclose(file);
     
     result.success = 1;
@@ -163,6 +227,16 @@ ExecutionResult create_file(const char *path) {
 }
 
 /**
+ * Crée un fichier (legacy, garde pour compatibilité)
+ */
+ExecutionResult create_file(const char *path) {
+    char timestamp[64];
+    time_t now = time(NULL);
+    snprintf(timestamp, sizeof(timestamp), "Fichier créé par HOPPER - %ld\n", now);
+    return create_file_with_content(path, timestamp);
+}
+
+/**
  * Supprime un fichier
  */
 ExecutionResult delete_file(const char *path) {
@@ -170,56 +244,65 @@ ExecutionResult delete_file(const char *path) {
     
     log_message("INFO", "Suppression de fichier");
     
-    if (unlink(path) == 0) {
-        result.success = 1;
-        snprintf(result.message, sizeof(result.message),
-                "Fichier supprimé: %s", path);
-        result.data[0] = '\0';
-        log_message("SUCCESS", result.message);
-    } else {
+    if (remove(path) != 0) {
         result.success = 0;
         snprintf(result.message, sizeof(result.message),
                 "Erreur: impossible de supprimer %s", path);
         result.data[0] = '\0';
         log_message("ERROR", result.message);
+        return result;
     }
     
+    result.success = 1;
+    snprintf(result.message, sizeof(result.message),
+            "Fichier supprimé: %s", path);
+    snprintf(result.data, sizeof(result.data),
+            "{\"path\": \"%s\"}", path);
+    
+    log_message("SUCCESS", result.message);
     return result;
 }
 
 /**
- * Liste un répertoire
+ * Liste le contenu d'un répertoire
  */
 ExecutionResult list_directory(const char *path) {
     ExecutionResult result;
-    char command[MAX_COMMAND_LENGTH];
-    FILE *fp;
-    char buffer[1024];
+    DIR *dir;
+    struct dirent *entry;
+    char files_json[3072] = "[";
+    int first = 1;
     
     log_message("INFO", "Liste du répertoire");
     
-    // Utilisation de la commande ls (macOS/Linux)
-    snprintf(command, sizeof(command), "ls -la %s 2>&1", path);
-    
-    fp = popen(command, "r");
-    if (fp == NULL) {
+    dir = opendir(path);
+    if (dir == NULL) {
         result.success = 0;
         snprintf(result.message, sizeof(result.message),
-                "Erreur: impossible de lister %s", path);
+                "Erreur: impossible d'ouvrir %s", path);
         result.data[0] = '\0';
+        log_message("ERROR", result.message);
         return result;
     }
     
-    result.data[0] = '\0';
-    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-        strncat(result.data, buffer, sizeof(result.data) - strlen(result.data) - 1);
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+        
+        if (!first) strcat(files_json, ", ");
+        char item[256];
+        snprintf(item, sizeof(item), "\"%s\"", entry->d_name);
+        strcat(files_json, item);
+        first = 0;
     }
-    
-    pclose(fp);
+    strcat(files_json, "]");
+    closedir(dir);
     
     result.success = 1;
     snprintf(result.message, sizeof(result.message),
             "Contenu de %s listé", path);
+    snprintf(result.data, sizeof(result.data),
+            "{\"path\": \"%s\", \"files\": %s}", path, files_json);
     
     log_message("SUCCESS", result.message);
     return result;

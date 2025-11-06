@@ -40,11 +40,45 @@ env/
 # Data & Models
 data/models/*.bin
 data/models/*.gguf
+data/models/*.pth
+data/models/*.h5
+data/models/*.safetensors
 data/cache/
 data/embeddings/
 data/logs/
 *.db
 *.sqlite
+
+# Audio files (test/temp data only - keep samples in git)
+*.wav
+*.mp3
+*.aiff
+*.flac
+*.ogg
+*.m4a
+!data/audio_samples/*.wav
+!data/dialogue_hopper/welcome.wav
+
+# Large model files
+*.gguf
+*.bin
+*.pth
+*.h5
+*.safetensors
+*.onnx
+*.pb
+*.tflite
+
+# Hugging Face cache & model directories
+models/
+.cache/
+huggingface/
+torch/hub/
+
+# Vector stores
+data/vector_store/*.index
+data/vector_store/*.pkl
+data/vector_store/*.faiss
 
 # Secrets
 .env

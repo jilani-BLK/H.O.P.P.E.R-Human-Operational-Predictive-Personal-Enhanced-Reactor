@@ -38,13 +38,9 @@ def get_system_adapter() -> SystemAdapter:
         )
     
     elif system == "Linux":
-        logger.info("⚠️ LinuxAdapter pas encore implémenté, utilisation du fallback")
-        # TODO: Implémenter LinuxAdapter
-        # from .linux_adapter import LinuxAdapter
-        # return LinuxAdapter()
-        raise UnsupportedPlatformError(
-            f"LinuxAdapter non implémenté. OS détecté: {system}"
-        )
+        logger.success("✅ Utilisation de LinuxAdapter")
+        from .linux_adapter import LinuxAdapter
+        return LinuxAdapter()
     
     else:
         raise UnsupportedPlatformError(

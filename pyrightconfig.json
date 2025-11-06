@@ -1,16 +1,19 @@
 {
   "include": [
     "src",
-    "tests",
-    "examples"
+    "tests"
   ],
   "exclude": [
     "**/node_modules",
     "**/__pycache__",
     "**/.venv",
-    "**/venv"
+    "**/venv",
+    "**/venv_*"
   ],
-  "ignore": [],
+  "ignore": [
+    "bin/**",
+    "scripts/**/*.sh"
+  ],
   "defineConstant": {},
   "venvPath": ".",
   "venv": "venv",
@@ -18,8 +21,9 @@
     "src"
   ],
   "typeCheckingMode": "basic",
-  "reportMissingImports": "warning",
+  "reportMissingImports": "none",
   "reportMissingTypeStubs": "none",
+  "reportMissingModuleSource": "none",
   "reportGeneralTypeIssues": "none",
   "reportOptionalSubscript": "none",
   "reportOptionalMemberAccess": "none",

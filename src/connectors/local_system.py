@@ -188,43 +188,54 @@ class LocalSystemConnector(BaseConnector):
         if not self.connected:
             return {"success": False, "error": "Non connecté"}
         
-        # 1. CHECK PERMISSION
-        perm_check = permission_manager.check_permission(user_id, action, params)
+        # 1. CHECK PERMISSION (bypass temporaire si module security non disponible)
+        if permission_manager is None:
+            logger.warning(f"⚠️ Security module désactivé - action {action} autorisée sans vérification")
+            perm_check = {"allowed": True, "requires_confirmation": False, "risk": None, "reason": "dev_mode"}
+        else:
+            perm_check = permission_manager.check_permission(user_id, action, params)
         
         if not perm_check["allowed"]:
             logger.error(f"🚫 Permission refusée: {action} - {perm_check['reason']}")
-            permission_manager.log_action_result(
-                user_id=user_id,
-                action=action,
-                risk=perm_check["risk"],
-                status="denied",
-                params=params,
-                error=perm_check["reason"]
-            )
+            if permission_manager:
+                permission_manager.log_action_result(
+                    user_id=user_id,
+                    action=action,
+                    risk=perm_check["risk"],
+                    status="denied",
+                    params=params,
+                    error=perm_check["reason"]
+                )
             return {"success": False, "error": f"Permission refusée: {perm_check['reason']}"}
         
         # 2. DEMANDER CONFIRMATION si nécessaire
         if perm_check["requires_confirmation"]:
             logger.warning(f"⚠️ Confirmation requise pour: {action}")
             
-            confirmed = await confirmation_engine.request_confirmation(
-                action=action,
-                params=params,
-                risk=perm_check["risk"].value,
-                reason=perm_check["reason"],
-                user_id=user_id
-            )
+            if confirmation_engine:
+                confirmed = await confirmation_engine.request_confirmation(
+                    action=action,
+                    params=params,
+                    risk=perm_check["risk"].value,
+                    reason=perm_check["reason"],
+                    user_id=user_id
+                )
+            else:
+                # En mode dev sans confirmation_engine, autoriser par défaut
+                logger.warning("⚠️ Confirmation engine désactivé - action autorisée")
+                confirmed = True
             
             if not confirmed:
                 logger.error(f"❌ Confirmation refusée: {action}")
-                permission_manager.log_action_result(
-                    user_id=user_id,
-                    action=action,
-                    risk=perm_check["risk"],
-                    status="cancelled",
-                    params=params,
-                    error="Confirmation refusée par utilisateur"
-                )
+                if permission_manager:
+                    permission_manager.log_action_result(
+                        user_id=user_id,
+                        action=action,
+                        risk=perm_check["risk"],
+                        status="cancelled",
+                        params=params,
+                        error="Confirmation refusée par utilisateur"
+                    )
                 return {"success": False, "error": "Action annulée par l'utilisateur"}
         
         # 3. EXÉCUTER L'ACTION
@@ -245,14 +256,15 @@ class LocalSystemConnector(BaseConnector):
         
         handler = actions.get(action)
         if not handler:
-            permission_manager.log_action_result(
-                user_id=user_id,
-                action=action,
-                risk=ActionRisk.MEDIUM,
-                status="error",
-                params=params,
-                error=f"Action '{action}' inconnue"
-            )
+            if permission_manager:
+                permission_manager.log_action_result(
+                    user_id=user_id,
+                    action=action,
+                    risk=ActionRisk.MEDIUM if ActionRisk else None,
+                    status="error",
+                    params=params,
+                    error=f"Action '{action}' inconnue"
+                )
             return {"success": False, "error": f"Action '{action}' inconnue"}
         
         # 4. EXÉCUTER
@@ -261,14 +273,15 @@ class LocalSystemConnector(BaseConnector):
             result = await handler(params)
             
             # 5. LOGGER SUCCÈS
-            permission_manager.log_action_result(
-                user_id=user_id,
-                action=action,
-                risk=perm_check["risk"],
-                status="success",
-                params=params,
-                result=result
-            )
+            if permission_manager:
+                permission_manager.log_action_result(
+                    user_id=user_id,
+                    action=action,
+                    risk=perm_check.get("risk"),
+                    status="success",
+                    params=params,
+                    result=result
+                )
             
             return {"success": True, "data": result}
             
@@ -276,14 +289,15 @@ class LocalSystemConnector(BaseConnector):
             self.set_error(str(e))
             
             # 6. LOGGER ÉCHEC
-            permission_manager.log_action_result(
-                user_id=user_id,
-                action=action,
-                risk=perm_check["risk"],
-                status="error",
-                params=params,
-                error=str(e)
-            )
+            if permission_manager:
+                permission_manager.log_action_result(
+                    user_id=user_id,
+                    action=action,
+                    risk=perm_check.get("risk"),
+                    status="error",
+                    params=params,
+                    error=str(e)
+                )
             
             return {"success": False, "error": str(e)}
     

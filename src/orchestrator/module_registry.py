@@ -24,6 +24,22 @@ try:
 except ImportError:
     hub_available = False
     logger.warning("⚠️ Coordination Hub non disponible")
+    # Fallback pour ModuleType si coordination_hub n'est pas disponible
+    from enum import Enum
+    class ModuleType(Enum):
+        CORE = "core"
+        LLM = "llm"
+        RAG = "rag"
+        REASONING = "reasoning"
+        LEARNING = "learning"
+        MONITORING = "monitoring"
+        VOICE = "voice"
+        SYSTEM = "system"
+        AUTH = "auth"
+        CONNECTORS = "connectors"
+        AGENT = "agent"
+        SECURITY = "security"
+        COMMUNICATION = "communication"
 
 
 class ModuleRegistry:
@@ -205,20 +221,9 @@ class ModuleRegistry:
         },
         
         # ============================================
-        # VOICE - Vocal (STT, TTS, etc.)
+        # VOICE - Vocal (STT, TTS, etc.) - REMOVED
+        # Voice system has been completely removed from HOPPER
         # ============================================
-        "voice_pipeline": {
-            "type": ModuleType.VOICE,
-            "path": "src.orchestrator.services.voice_pipeline",
-            "class": "VoicePipeline",
-            "dependencies": []
-        },
-        "voice_cloner": {
-            "type": ModuleType.VOICE,
-            "path": "src.tts.voice_cloning",
-            "class": "HopperVoiceCloner",
-            "dependencies": []
-        },
         
         # ============================================
         # SYSTEM - Exécution système et fichiers
@@ -284,10 +289,6 @@ class ModuleRegistry:
                 # ChainOfThought nécessite LLM client
                 return None
             
-            elif module_name in ["voice_pipeline", "voice_cloner"]:
-                # Modules voice nécessitent configuration
-                return None
-            
             elif module_name in ["system_tools", "filesystem_tools"]:
                 # Modules system tools nécessitent configuration
                 return None
@@ -343,10 +344,6 @@ class ModuleRegistry:
             "malware_detector": "auth",
             "confirmation_engine": "auth",
             "audit_logger": "auth",
-            
-            # Voice dans les services STT/TTS
-            "voice_pipeline": "stt",
-            "voice_cloner": "tts",
             
             # System dans le service System Executor
             "system_tools": "system_executor",

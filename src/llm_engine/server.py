@@ -104,6 +104,8 @@ async def health() -> Dict[str, Any]:
     return {
         "status": "healthy" if ollama_available else "degraded",
         "model": OLLAMA_MODEL,
+        "model_loaded": ollama_available,  # Champ pour tests pytest
+        "model_path": f"ollama://{OLLAMA_MODEL}",  # Champ pour tests pytest
         "ollama_host": OLLAMA_HOST,
         "context_size": CONTEXT_SIZE,
         "kb_available": kb is not None,
@@ -204,6 +206,7 @@ class SearchRequest(BaseModel):
 
 
 @app.post("/learn")
+@app.post("/kb/learn")  # Alias pour compatibilité tests Phase 2
 async def learn(request: LearnRequest) -> Dict[str, Any]:
     """
     Apprend un nouveau fait/document dans la KB

@@ -1,136 +1,270 @@
-# HOPPER - Human Operational Predictive Personal Enhanced Reactor
+# 🤖 HOPPER - Human Operational Predictive Personal Enhanced Reactor# HOPPER - Human Operational Predictive Personal Enhanced Reactor
 
-![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+
+
+**Assistant personnel intelligent avec capacités vocales, email et exécution de commandes système**![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-macOS%20M1%2FM2%2FM3-lightgrey)
 
-> # H.O.P.P.E.R - Human Operational Predictive Personal Enhanced Reactor
+[![Status](https://img.shields.io/badge/Status-Phase%202%20Complete-success)]()![Platform](https://img.shields.io/badge/platform-macOS%20M1%2FM2%2FM3-lightgrey)
+
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)]()
+
+[![Python](https://img.shields.io/badge/Python-3.11-blue)]()> # H.O.P.P.E.R - Human Operational Predictive Personal Enhanced Reactor
+
+[![License](https://img.shields.io/badge/License-MIT-green)]()
 
 **Assistant personnel intelligent fonctionnant 100% en local**  
-Développé en Python et C | Phase 2 complétée et optimisée ✅
 
-[![Phase 1](https://img.shields.io/badge/Phase%201-100%25%20Complete-success)](docs/PHASE1_FINAL_ANALYSIS.md)
+---Développé en Python et C | Phase 2 complétée et optimisée ✅
+
+
+
+## 🚀 Démarrage Rapide[![Phase 1](https://img.shields.io/badge/Phase%201-100%25%20Complete-success)](docs/PHASE1_FINAL_ANALYSIS.md)
+
 [![Phase 2](https://img.shields.io/badge/Phase%202-95%25%20Complete-success)](PHASE2_SUCCESS.md)
-[![Tests](https://img.shields.io/badge/Tests-53%2F53%20Passed-success)](tests/)
-[![Code](https://img.shields.io/badge/Code-2453%20lines-blue)](#)
 
----
+```bash[![Tests](https://img.shields.io/badge/Tests-53%2F53%20Passed-success)](tests/)
 
-## 🎯 Statut Actuel
+# 1. Cloner et entrer dans le projet[![Code](https://img.shields.io/badge/Code-2453%20lines-blue)](#)
+
+git clone https://github.com/jilani-BLK/H.O.P.P.E.R.git
+
+cd HOPPER---
+
+
+
+# 2. Démarrer tous les services## 🎯 Statut Actuel
+
+docker-compose up -d
 
 **Version**: Phase 2 validée + Architecture Hybride (4 Novembre 2025)
 
-| Fonctionnalité | Status | Performance |
+# 3. Installer le CLI
+
+make install-cli| Fonctionnalité | Status | Performance |
+
 |---------------|--------|-------------|
-| **Phase 2 Conversationnelle** | ✅ **VALIDÉE 75%** | Taux réussite tests |
-| Architecture 5 services | ✅ 100% | Latence <1s |
-| LLM (llama3.2 2GB) | ✅ Opérationnel | 810ms moyenne |
+
+# 4. Tester| **Phase 2 Conversationnelle** | ✅ **VALIDÉE 75%** | Taux réussite tests |
+
+hopper "Bonjour HOPPER, présente-toi"| Architecture 5 services | ✅ 100% | Latence <1s |
+
+```| LLM (llama3.2 2GB) | ✅ Opérationnel | 810ms moyenne |
+
 | Dispatcher Hybride | ✅ Intelligent | Routing système+LLM |
-| Conversation multi-tour | ✅ Fonctionnel | 10 messages historique |
+
+---| Conversation multi-tour | ✅ Fonctionnel | 10 messages historique |
+
 | RAG (Knowledge Base) | ✅ Chargée | 25 documents FAISS |
-| CLI v2 Interactif | ✅ 100% | REPL + single-command |
+
+## ✨ Fonctionnalités| CLI v2 Interactif | ✅ 100% | REPL + single-command |
+
 | Mode offline | ✅ 100% | Ollama local v0.12.6 |
-| Tests automatisés | ✅ 15/20 validés | 75% succès |
 
-### 🎉 Phase 2 Validée (Nouveau)
+### Phase 1-2 (Terminées) ✅| Tests automatisés | ✅ 15/20 validés | 75% succès |
 
-HOPPER peut maintenant **converser en français de manière naturelle** et **maintenir le contexte** sur plusieurs échanges.
+- **Conversation LLM** : Dialogue intelligent avec Ollama (llama3.2)
 
-**Architecture Hybride** (Système + LLM):
+- **Knowledge Base** : Qdrant pour apprentissage et rappel### 🎉 Phase 2 Validée (Nouveau)
+
+- **CLI Native** : Commande `hopper` système
+
+- **Commandes Système** : Exécution sécurisée (whitelist)HOPPER peut maintenant **converser en français de manière naturelle** et **maintenir le contexte** sur plusieurs échanges.
+
+- **API REST** : Interface complète FastAPI
+
+- **Monitoring** : Health checks et logs structurés**Architecture Hybride** (Système + LLM):
+
 - 🎯 **Dispatcher Intelligent**: Routage automatique commandes système vs conversations
-- 🧠 **LLM Local**: llama3.2 (2GB) via Ollama v0.12.6, 100% offline
-- 💬 **Conversations Multi-tour**: Historique 10 messages, contexte maintenu
-- � **Knowledge Base**: 25 documents FAISS, RAG ready
-- 🖥️ **CLI v2**: Mode interactif REPL + single-command
 
-📘 **Documentation**: [`PHASE2_VALIDATION.md`](PHASE2_VALIDATION.md) | 🚀 **Succès**: [`PHASE2_SUCCESS.md`](PHASE2_SUCCESS.md) | 🧪 **Tests**: [`scripts/test/validate_phase2.py`](scripts/test/validate_phase2.py)
+### Phase 3 (En développement) 🚧- 🧠 **LLM Local**: llama3.2 (2GB) via Ollama v0.12.6, 100% offline
 
-📊 [**Rapport Performance Complet**](PERFORMANCE_ANALYSIS.md) | 📈 [**Résultats Optimisation**](OPTIMIZATION_RESULTS.md) | 📋 [**Rapport Final**](FINAL_REPORT.md)
+- **Reconnaissance Vocale** : Whisper STT temps réel- 💬 **Conversations Multi-tour**: Historique 10 messages, contexte maintenu
 
-HOPPER est un assistant IA personnel conçu pour apprendre de lui-même, traiter des tâches en temps réel et s'intégrer avec de multiples systèmes - le tout sur votre machine, sans dépendance cloud.
+- **Synthèse Vocale** : Piper TTS voix française naturelle- � **Knowledge Base**: 25 documents FAISS, RAG ready
 
-## Caractéristiques Principales
+- **Voice Auth** : Identification utilisateur par voix- 🖥️ **CLI v2**: Mode interactif REPL + single-command
 
-- **Intelligence Locale**: Modèle de langage puissant (LLaMA/Mistral) tournant sur Mac M3 Max
-- **Apprentissage Autonome**: Fine-tuning local et apprentissage par renforcement
-- **100% Privé**: Aucune donnée envoyée au cloud, tout reste sur votre machine
-- **Performances Optimales**: Architecture C/C++/Python pour vitesse maximale
-- **Interface Vocale**: Reconnaissance (Whisper) et synthèse vocale naturelle
-- **Sécurité**: Authentification vocale/faciale intégrée
-- **Modulaire**: Architecture microservices Docker extensible
+- **Email** : Intégration IMAP/SMTP avec résumés intelligents
 
-## Démarrage Rapide
+- **Notifications** : Alertes proactives vocales📘 **Documentation**: [`PHASE2_VALIDATION.md`](PHASE2_VALIDATION.md) | 🚀 **Succès**: [`PHASE2_SUCCESS.md`](PHASE2_SUCCESS.md) | 🧪 **Tests**: [`scripts/test/validate_phase2.py`](scripts/test/validate_phase2.py)
 
-```bash
-# 1. Cloner le projet
-git clone https://github.com/jilani-BLK/H.O.P.P.E.R-Human-Operational-Predictive-Personal-Enhanced-Reactor.git
-cd HOPPER
 
-# 2. Installation automatique
-chmod +x install.sh
-./install.sh
 
-# 3. Tester
+---📊 [**Rapport Performance Complet**](PERFORMANCE_ANALYSIS.md) | 📈 [**Résultats Optimisation**](OPTIMIZATION_RESULTS.md) | 📋 [**Rapport Final**](FINAL_REPORT.md)
+
+
+
+## 🏗️ ArchitectureHOPPER est un assistant IA personnel conçu pour apprendre de lui-même, traiter des tâches en temps réel et s'intégrer avec de multiples systèmes - le tout sur votre machine, sans dépendance cloud.
+
+
+
+```## Caractéristiques Principales
+
+┌──────────────────────────────────────┐
+
+│      Orchestrator :5050              │- **Intelligence Locale**: Modèle de langage puissant (LLaMA/Mistral) tournant sur Mac M3 Max
+
+│   • Routage intelligent              │- **Apprentissage Autonome**: Fine-tuning local et apprentissage par renforcement
+
+│   • Gestion contexte                 │- **100% Privé**: Aucune donnée envoyée au cloud, tout reste sur votre machine
+
+│   • CLI native                       │- **Performances Optimales**: Architecture C/C++/Python pour vitesse maximale
+
+└───┬──────────┬──────────┬────────────┘- **Interface Vocale**: Reconnaissance (Whisper) et synthèse vocale naturelle
+
+    │          │          │- **Sécurité**: Authentification vocale/faciale intégrée
+
+    ▼          ▼          ▼- **Modulaire**: Architecture microservices Docker extensible
+
+┌────────┐ ┌────────┐ ┌──────────────┐
+
+│ LLM    │ │System  │ │Voice/Email   │## Démarrage Rapide
+
+│ :5001  │ │:5002   │ │:5003-5008    │
+
+└───┬────┘ └────────┘ └──────────────┘```bash
+
+    │# 1. Cloner le projet
+
+    ▼git clone https://github.com/jilani-BLK/H.O.P.P.E.R-Human-Operational-Predictive-Personal-Enhanced-Reactor.git
+
+┌─────────────┐cd HOPPER
+
+│Qdrant :6333 │
+
+│ Vector DB   │# 2. Installation automatique
+
+└─────────────┘chmod +x install.sh
+
+```./install.sh
+
+
+
+---# 3. Tester
+
 python3 hopper-cli.py -i
-```
 
-**Guide détaillé**: [docs/QUICKSTART.md](docs/QUICKSTART.md)
+## 💻 Utilisation```
 
-## Exemples d'Utilisation
 
-```bash
+
+### CLI**Guide détaillé**: [docs/QUICKSTART.md](docs/QUICKSTART.md)
+
+
+
+```bash## Exemples d'Utilisation
+
+# Mode commande simple
+
+hopper "Quelle est la capitale de la France ?"```bash
+
 # Mode interactif conversationnel (NOUVEAU Phase 2)
-python3 hopper_cli_v2.py
+
+# Mode interactifpython3 hopper_cli_v2.py
+
+hopper
 
 hopper> Bonjour, qui es-tu ?
-🤖 HOPPER: Je suis HOPPER, votre assistant personnel intelligent et local...
-⏱️ 2.1s | 142 tokens
+
+# Mode repos🤖 HOPPER: Je suis HOPPER, votre assistant personnel intelligent et local...
+
+hopper repos⏱️ 2.1s | 142 tokens
+
+```
 
 hopper> Que peux-tu faire ?
-🤖 HOPPER: Je peux exécuter des commandes système et répondre à vos questions...
+
+### API REST🤖 HOPPER: Je peux exécuter des commandes système et répondre à vos questions...
+
 ⏱️ 1.8s | 98 tokens
 
-# Mode single-command (conversations)
-python3 hopper_cli_v2.py "C'est quoi un LLM ?"
+```bash
 
-# Commandes système (Phase 1)
-python3 hopper_cli_v2.py "liste les fichiers de /tmp"
-python3 hopper_cli_v2.py "crée un fichier notes.txt"
-python3 hopper_cli_v2.py "donne moi la date"
+# Health check# Mode single-command (conversations)
+
+curl http://localhost:5050/api/v1/healthpython3 hopper_cli_v2.py "C'est quoi un LLM ?"
+
+
+
+# Commande# Commandes système (Phase 1)
+
+curl -X POST http://localhost:5050/api/v1/command \python3 hopper_cli_v2.py "liste les fichiers de /tmp"
+
+  -H "Content-Type: application/json" \python3 hopper_cli_v2.py "crée un fichier notes.txt"
+
+  -d '{"command": "Bonjour HOPPER"}'python3 hopper_cli_v2.py "donne moi la date"
+
+```
 
 # API REST
-curl -X POST http://localhost:5050/api/v1/command \
+
+---curl -X POST http://localhost:5050/api/v1/command \
+
   -d '{"command":"Qui es-tu ?"}'
-```
 
-## Architecture
+## 📚 Documentation```
 
-```
+
+
+- **[Phase 1](docs/PHASE1.md)** - Infrastructure de base ✅## Architecture
+
+- **[Phase 2](docs/PHASE2.md)** - CLI, Qdrant, Tests ✅  
+
+- **[Phase 3](docs/PHASE3.md)** - Voice & Email 🚧```
+
 ┌─────────────────────────────────────────┐
-│         INTERFACES UTILISATEUR          │
+
+Voir [docs/](docs/) pour documentation complète.│         INTERFACES UTILISATEUR          │
+
 │    CLI │ Voix │ API REST │ Web GUI     │
-└───────────────┬─────────────────────────┘
+
+---└───────────────┬─────────────────────────┘
+
                 │
-┌───────────────▼─────────────────────────┐
+
+## 🔧 Commandes┌───────────────▼─────────────────────────┐
+
 │      ORCHESTRATEUR CENTRAL              │
-│  (Analyse, Routage, Contexte, Décision) │
-└─┬─────┬─────┬─────┬─────┬─────┬────────┘
-  │     │     │     │     │     │
-  ▼     ▼     ▼     ▼     ▼     ▼
-┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌────┐
-│LLM│ │SYS│ │STT│ │TTS│ │AUT│ │CONN│
-│C++│ │ C │ │Py │ │Py │ │Py │ │ Py │
-└───┘ └───┘ └───┘ └───┘ └───┘ └────┘
+
+```bash│  (Analyse, Routage, Contexte, Décision) │
+
+make start          # Démarrer services└─┬─────┬─────┬─────┬─────┬─────┬────────┘
+
+make stop           # Arrêter services  │     │     │     │     │     │
+
+make health         # Vérifier santé  ▼     ▼     ▼     ▼     ▼     ▼
+
+make logs           # Voir logs┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌────┐
+
+make test           # Lancer tests│LLM│ │SYS│ │STT│ │TTS│ │AUT│ │CONN│
+
+make clean          # Nettoyage│C++│ │ C │ │Py │ │Py │ │Py │ │ Py │
+
+```└───┘ └───┘ └───┘ └───┘ └───┘ └────┘
+
 ```
+
+---
 
 **Services**:
-- **Orchestrateur** (Python): Cerveau central coordonnant tous les services
+
+## 📜 License- **Orchestrateur** (Python): Cerveau central coordonnant tous les services
+
 - **LLM Engine** (C++ llama.cpp): Modèle de langage optimisé pour Apple Silicon
-- **System Executor** (C): Actions système haute performance
+
+MIT License - voir [LICENSE](LICENSE)- **System Executor** (C): Actions système haute performance
+
 - **STT** (Whisper): Reconnaissance vocale multilingue
-- **TTS**: Synthèse vocale naturelle
+
+---- **TTS**: Synthèse vocale naturelle
+
 - **Auth**: Authentification vocale/faciale
-- **Connectors**: Intégrations (email, IoT, calendrier...)
+
+**Version** : 0.3.0-alpha  - **Connectors**: Intégrations (email, IoT, calendrier...)
+
+**Status** : Phase 2 Complete ✅ | Phase 3 In Progress 🚧
 
 **Architecture détaillée**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 

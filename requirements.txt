@@ -1,7 +1,101 @@
-pytest==8.4.2
-pytest-asyncio==0.24.0
-pytest-cov>=4.1.0
-responses>=0.25.0
+# HOPPER - Requirements Consolidés
+# Version: 0.3.0 (Phase 2 Complete, Phase 3 Ready)
+
+# ============================================
+# PHASE 1-2 - Infrastructure & LLM
+# ============================================
+# API & Web
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+httpx==0.25.1
+requests==2.31.0
+python-multipart==0.0.6
+
+# Database & Vector Store
+qdrant-client==1.7.3
 neo4j==5.25.0
+
+# LLM & NLP
+sentence-transformers==2.2.2
+
+# Utilitaires
+pydantic==2.4.2
+numpy==1.24.3
+loguru==0.7.2
 python-dotenv==1.0.0
 dataclasses-json==0.6.3
+
+# Data Formats & Readers
+beautifulsoup4==4.12.2
+lxml==4.9.3
+python-docx==1.1.0
+openpyxl==3.1.2
+PyPDF2==3.0.1
+markdown==3.5.1
+html2text==2020.1.16
+
+# System & Security
+psutil==5.9.6
+cryptography==41.0.7
+aiohttp==3.9.1
+
+# AI & ML (FAISS fallback)
+faiss-cpu==1.7.4
+
+# CLI & Display
+rich==13.7.0
+
+# ============================================
+# TESTS
+# ============================================
+pytest==8.4.2
+pytest-asyncio==0.24.0
+pytest-cov==4.1.0
+responses==0.25.0
+
+# ============================================
+# PHASE 3 - Voice & Email
+# ============================================
+# Phase 3 maintenant ACTIVE
+
+# STT (Speech-to-Text)
+faster-whisper==0.10.0
+webrtcvad==2.0.10
+pyaudio==0.2.14
+soundfile==0.12.1
+
+# TTS (Text-to-Speech)
+piper-tts==1.2.0
+
+# Voice Authentication
+speechbrain==0.5.16
+torchaudio==2.1.0
+torch==2.1.0
+
+# Email (déjà installés ci-dessus)
+# beautifulsoup4==4.12.2
+# lxml==4.9.3
+
+# ============================================
+# DÉVELOPPEMENT (Optionnel)
+# ============================================
+# black==23.12.1
+# flake8==7.0.0
+# mypy==1.8.0
+# ipython==8.20.0
+
+# ============================================
+# INSTALLATION
+# ============================================
+# Phase 1-2 seulement :
+#   pip install -r requirements.txt
+#
+# Phase 3 incluse :
+#   pip install -r requirements.txt
+#   # Puis décommenter section Phase 3 et :
+#   pip install -r requirements.txt
+#
+# Développement :
+#   pip install -r requirements.txt
+#   # Puis décommenter section Développement et :
+#   pip install -r requirements.txt

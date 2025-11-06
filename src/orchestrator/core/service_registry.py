@@ -21,12 +21,10 @@ class ServiceRegistry:
         self.session: Optional[aiohttp.ClientSession] = None
         
     async def register_services(self) -> None:
-        """Enregistre tous les services disponibles"""
+        """Enregistre tous les services disponibles (Phase 1: sans STT/TTS)"""
         self.services: Dict[str, str] = {
             "llm": settings.LLM_SERVICE_URL,  # pyright: ignore[reportGeneralTypeIssues]
             "system_executor": settings.SYSTEM_EXECUTOR_URL,  # pyright: ignore[reportGeneralTypeIssues]
-            "stt": settings.STT_SERVICE_URL,  # pyright: ignore[reportGeneralTypeIssues]
-            "tts": settings.TTS_SERVICE_URL,  # pyright: ignore[reportGeneralTypeIssues]
             "auth": settings.AUTH_SERVICE_URL,  # pyright: ignore[reportGeneralTypeIssues]
             "connectors": settings.CONNECTORS_URL  # pyright: ignore[reportGeneralTypeIssues]
         }

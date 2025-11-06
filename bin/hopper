@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# HOPPER CLI - Script natif pour commandes système
+# Usage: 
+#   hopper repos              → Mode repos/veille
+#   hopper "crée fichier"     → Commande avec espaces
+#   hopper                    → Mode interactif
+
+set -e
+
+# Trouver le chemin du projet HOPPER
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Python à utiliser (venv si disponible)
+if [ -f "$PROJECT_ROOT/venv/bin/python" ]; then
+    PYTHON="$PROJECT_ROOT/venv/bin/python"
+elif [ -f "$PROJECT_ROOT/venv_tests/bin/python" ]; then
+    PYTHON="$PROJECT_ROOT/venv_tests/bin/python"
+else
+    PYTHON="python3"
+fi
+
+# Gestion de la commande 'repos' (mode veille)
+if [ "$1" = "repos" ]; then
+    echo "💤 HOPPER en mode repos..."
+    exec "$PYTHON" "$PROJECT_ROOT/hopper_cli.py" --sleep
+fi
+
+# Toutes les autres commandes
+if [ $# -eq 0 ]; then
+    # Mode interactif
+    exec "$PYTHON" "$PROJECT_ROOT/hopper_cli.py" --interactive
+else
+    # Commande avec arguments (passer tous les args)
+    exec "$PYTHON" "$PROJECT_ROOT/hopper_cli.py" "$@"
+fi

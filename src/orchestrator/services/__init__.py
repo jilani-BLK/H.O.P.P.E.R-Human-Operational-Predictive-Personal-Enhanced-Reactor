@@ -3,6 +3,6 @@ HOPPER - Services Module
 Services pour orchestration avancée
 """
 
-__all__ = ["VoicePipeline"]
+__all__ = []
 
-from .voice_pipeline import VoicePipeline
+# Voice pipeline removed - vocal system has been completely removed from HOPPER

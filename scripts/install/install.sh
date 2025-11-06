@@ -126,7 +126,7 @@ sleep 30
 
 echo ""
 echo "🏥 Vérification de l'état des services..."
-health=$(curl -s http://localhost:5000/health || echo '{"status":"error"}')
+health=$(curl -s http://localhost:5050/api/v1/health || echo '{"status":"error"}')
 echo "$health" | python3 -m json.tool
 
 echo ""
@@ -134,10 +134,10 @@ echo "╔═══════════════════════�
 echo "║            ✅ Installation Terminée!           ║"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
-echo "🎯 Prochaines étapes:"
+echo "🎯 Prochaines étapes (Phase 1):"
 echo ""
 echo "1. Tester le CLI:"
-echo "   python3 hopper-cli.py -i"
+echo "   python3 hopper_cli.py \"liste les fichiers du dossier /tmp\""
 echo ""
 echo "2. Essayer une commande:"
 echo "   python3 hopper-cli.py \"Bonjour HOPPER\""

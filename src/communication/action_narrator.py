@@ -75,54 +75,24 @@ class ActionNarrator:
         self.auto_approve_low_risk = auto_approve_low_risk
         self.action_history: List[Action] = []
         
-        # Templates de narration par type d'action
-        self.templates = {
-            ActionType.SECURITY_SCAN: {
-                "intro": "Je vais vérifier {target}",
-                "reason": "pour m'assurer qu'il ne présente aucun danger",
-                "duration": "Cela prendra {duration}",
-            },
-            ActionType.FILE_OPERATION: {
-                "intro": "Je m'apprête à {operation} {target}",
-                "reason": "pour {purpose}",
-                "safety": "Une sauvegarde sera créée avant toute modification",
-            },
-            ActionType.SYSTEM_COMMAND: {
-                "intro": "Je vais exécuter la commande : {command}",
-                "reason": "afin de {purpose}",
-                "caution": "Cette action modifiera le système",
-            },
-            ActionType.DATA_ANALYSIS: {
-                "intro": "Je vais analyser {data}",
-                "reason": "pour {purpose}",
-                "steps": "Voici mon plan : {steps}",
-            },
-            ActionType.LEARNING: {
-                "intro": "J'ai remarqué {observation}",
-                "action": "Je vais apprendre {what} pour m'améliorer",
-                "benefit": "Cela me permettra de {benefit}",
-            },
-            ActionType.SEARCH: {
-                "intro": "Je vais d'abord chercher {what}",
-                "reason": "pour obtenir les informations les plus récentes",
-                "then": "Puis j'analyserai comment cela s'applique à votre situation",
-            },
-            ActionType.REASONING: {
-                "intro": "Laissez-moi réfléchir à {problem}",
-                "plan": "Mon approche : {steps}",
-                "confidence": "Niveau de confiance : {confidence}",
-            },
-            ActionType.CODE_EXECUTION: {
-                "intro": "Je vais exécuter le code : {code}",
-                "reason": "pour {purpose}",
-                "safety": "Le code sera exécuté dans un environnement isolé",
-            },
-            ActionType.PERMISSION_REQUEST: {
-                "intro": "J'ai besoin de votre permission pour {action}",
-                "reason": "Raison : {reason}",
-                "approval": "Voulez-vous que je continue ? (oui/non)",
-            },
-        }
+        # REFACTORISÉ: Templates statiques supprimés - utiliser LLMActionNarrator
+        # Les narrations sont maintenant générées dynamiquement par le LLM
+        self.llm_narrator = None  # Initialisé à la demande
+        self.llm_url = "http://localhost:5001/api/generate"
+        self.model_name = "mistral:latest"
+    
+    def _get_llm_narrator(self):
+        """Initialise le narrateur LLM à la demande (lazy loading)"""
+        if self.llm_narrator is None:
+            try:
+                from communication.llm_action_narrator import LLMActionNarrator
+                self.llm_narrator = LLMActionNarrator(
+                    llm_service_url=self.llm_url
+                )
+            except Exception as e:
+                logger.error(f"Impossible d'initialiser LLMActionNarrator: {e}")
+                self.llm_narrator = "unavailable"  # Marquer comme indisponible
+        return self.llm_narrator if self.llm_narrator != "unavailable" else None
     
     def narrate(
         self,
@@ -171,10 +141,51 @@ class ActionNarrator:
         return True
     
     def _build_narrative(self, action: Action) -> str:
-        """Construit un message naturel pour l'action"""
-        parts = []
+        """
+        Construit le message narratif pour une action
+        REFACTORISÉ: Utilise LLM pour génération dynamique au lieu de templates
+        """
+        import asyncio
         
-        # Emoji selon urgence
+        # Essayer d'utiliser le narrateur LLM
+        llm_narrator = self._get_llm_narrator()
+        
+        if llm_narrator:
+            try:
+                # Préparer le contexte pour le LLM
+                context = {
+                    "action_description": action.description,
+                    "action_type": action.action_type.value,
+                    "urgency": action.urgency.value,
+                    "reason": action.reason,
+                    "estimated_duration": action.estimated_duration,
+                    "risks": action.risks,
+                    "benefits": action.benefits,
+                    "details": action.details,
+                    "requires_approval": action.requires_approval
+                }
+                
+                # Générer narration via LLM (appel synchrone d'une fonction async)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    narration_text = loop.run_until_complete(
+                        llm_narrator.generate_narration(
+                            action_type="action_explanation",
+                            action_details=context,
+                            execution_result=None,
+                            user_preferences=None,
+                            tone="professional"
+                        )
+                    )
+                    return narration_text
+                finally:
+                    loop.close()
+                    
+            except Exception as e:
+                logger.warning(f"Échec narration LLM, fallback template minimal: {e}")
+        
+        # Fallback minimal si LLM indisponible (pas de templates statiques)
         emoji_map = {
             Urgency.INFO: "ℹ️",
             Urgency.LOW: "💡",
@@ -184,37 +195,13 @@ class ActionNarrator:
         }
         emoji = emoji_map.get(action.urgency, "ℹ️")
         
-        # Introduction
-        parts.append(f"{emoji} **{action.description}**")
-        
-        # Raison
+        parts = [f"{emoji} {action.description}"]
         if action.reason:
-            parts.append(f"\n   Pourquoi : {action.reason}")
-        
-        # Durée estimée
+            parts.append(f"\nRaison: {action.reason}")
         if action.estimated_duration:
-            parts.append(f"\n   Durée : {action.estimated_duration}")
+            parts.append(f"\nDurée: {action.estimated_duration}")
         
-        # Risques
-        if action.risks:
-            parts.append("\n   ⚠️  Risques :")
-            for risk in action.risks:
-                parts.append(f"      • {risk}")
-        
-        # Bénéfices
-        if action.benefits:
-            parts.append("\n   ✓ Bénéfices :")
-            for benefit in action.benefits:
-                parts.append(f"      • {benefit}")
-        
-        # Détails supplémentaires
-        if action.details:
-            if "steps" in action.details:
-                parts.append("\n   📋 Étapes :")
-                for i, step in enumerate(action.details["steps"], 1):
-                    parts.append(f"      {i}. {step}")
-        
-        return "".join(parts)
+        return "\n".join(parts)
     
     def _request_approval(self, action: Action, display: Callable) -> bool:
         """

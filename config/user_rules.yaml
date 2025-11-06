@@ -1,0 +1,122 @@
+# HOPPER - User Rules Configuration (Phase 4)
+# Règles personnalisées pour adapter le comportement de HOPPER
+
+# === Informations Utilisateur ===
+user:
+  name: "User"
+  timezone: "Europe/Paris"
+  language: "fr"
+  
+# === Heures de Silence (Do Not Disturb) ===
+quiet_hours:
+  enabled: true
+  weekdays:
+    start: "22:00"  # 22h
+    end: "08:00"    # 8h
+  weekends:
+    start: "23:00"
+    end: "09:00"
+  # Actions autorisées pendant heures silence
+  allowed_actions:
+    - "emergency_notification"  # Notifications urgentes seulement
+    - "voice_command"  # Commandes vocales toujours acceptées
+
+# === Contacts VIP ===
+vip_contacts:
+  enabled: true
+  # Ces contacts peuvent envoyer notifications même en heures silence
+  emails:
+    - "boss@company.com"
+    - "family@gmail.com"
+  keywords:
+    - "URGENT"
+    - "EMERGENCY"
+    - "IMPORTANT"
+
+# === Préférences Notifications ===
+notifications:
+  email:
+    enabled: false  # Désactivé temporairement
+    check_interval: 300  # 5 minutes
+    priority_threshold: 7  # Score LLM >= 7 pour notifier
+  voice:
+    enabled: true
+    activation_keyword: "hopper"
+    confirmation_sounds: true
+  system:
+    enabled: true
+    show_desktop_notifications: false  # Pas dans Docker
+
+# === Comportement LLM ===
+llm_preferences:
+  max_response_length: 300  # tokens
+  temperature: 0.7  # Créativité
+  style: "concise"  # concise, detailed, friendly
+  # Auto-apprentissage
+  learn_from_corrections: true
+  remember_preferences: true
+
+# === Sécurité & Permissions ===
+security:
+  # Mode dev (bypass confirmations)
+  dev_mode: true
+  # Confirmation requise pour actions HIGH risk
+  require_confirmation:
+    - "execute_script"
+    - "delete_file"
+    - "system_shutdown"
+  # Répertoires protégés (lecture seule)
+  protected_directories:
+    - "/System"
+    - "/Library/System"
+    - "/private"
+  # Commandes bannies
+  banned_commands:
+    - "rm -rf /"
+    - "sudo reboot"
+    - "kill -9"
+
+# === Automatisations ===
+automations:
+  # Résumé email matinal
+  morning_summary:
+    enabled: false  # TODO: Phase 4.2
+    time: "08:30"
+    include:
+      - "unread_emails"
+      - "calendar_today"
+      - "weather"
+  
+  # Sauvegarde conversations
+  backup_conversations:
+    enabled: true
+    frequency: "daily"
+    keep_days: 30
+
+# === Intégrations ===
+integrations:
+  spotify:
+    enabled: true
+    auto_resume: false
+  calendar:
+    enabled: false  # TODO
+  weather:
+    enabled: false  # TODO
+  
+# === Apprentissage ===
+learning:
+  # Collecter conversations pour fine-tuning
+  collect_conversations: true
+  # Demander feedback après chaque interaction
+  request_feedback: false
+  # Adaptation automatique température/style
+  auto_adjust_style: false  # TODO: Phase 4.3
+
+# === Limites & Quotas ===
+limits:
+  # Limiter nombre d'interactions par heure (anti-spam)
+  max_commands_per_hour: 100
+  # Limiter durée max exécution commande
+  max_execution_time: 30  # secondes
+  # Limiter taille fichiers lus
+  max_file_size_mb: 10

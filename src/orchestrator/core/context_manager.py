@@ -82,15 +82,21 @@ class ContextManager:
             actions_taken: Liste des actions effectuées
         """
         # Get or create context
-        _ = self.get_context(user_id)
+        context = self.get_context(user_id)
         
         # Store exchange data
-        _exchange: Dict[str, Any] = {
+        exchange: Dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
-            "user_input": user_input,
-            "assistant_response": assistant_response,
+            "user": user_input,  # Changed from user_input
+            "assistant": assistant_response,  # Changed from assistant_response
             "actions_taken": actions_taken or []
         }
+        
+        # Actually add to history! (BUG FIX)
+        context["conversation_history"].append(exchange)
+        context["last_updated"] = datetime.now().isoformat()
+        
+        logger.debug(f"Ajouté échange à l'historique de {user_id} (total: {len(context['conversation_history'])})")
     
     def get_conversation_history(
         self,

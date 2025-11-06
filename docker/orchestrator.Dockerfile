@@ -26,4 +26,7 @@ EXPOSE 5050
 ENV PYTHONPATH=/app/..
 
 # Commande de démarrage
-CMD ["python", "main.py"]
+# Phase 1: main_phase1.py (commandes système uniquement)
+# Phase 2: main_phase2.py (commandes système + conversations LLM)
+# Phase 3+: main.py (version complète avec workflows)
+CMD ["python", "main_phase2.py"]

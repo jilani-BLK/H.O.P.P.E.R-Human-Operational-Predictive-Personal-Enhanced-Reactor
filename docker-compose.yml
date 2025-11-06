@@ -25,9 +25,12 @@ services:
       - .env
     depends_on:
       - llm
+      - system_executor
       - connectors
+      - whisper
+      - tts_piper
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
@@ -51,18 +54,18 @@ services:
       - ./config:/config:ro
     environment:
       - LLM_SERVICE_PORT=5001
-      - LLM_MODEL_PATH=${LLM_MODEL_PATH}
-      - LLM_CONTEXT_SIZE=${LLM_CONTEXT_SIZE}
-      - LLM_N_THREADS=${LLM_N_THREADS}
-      - LLM_N_GPU_LAYERS=${LLM_N_GPU_LAYERS}
-      - LLM_TEMPERATURE=${LLM_TEMPERATURE}
-      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS}
-      - KB_PERSIST_PATH=${KB_PERSIST_PATH}
-      - KB_EMBEDDING_MODEL=${KB_EMBEDDING_MODEL}
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.2
+      - LLM_CONTEXT_SIZE=4096
+      - KB_PERSIST_PATH=/data/vector_store
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
     env_file:
       - .env
+    depends_on:
+      - qdrant
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
     deploy:
       resources:
@@ -79,73 +82,21 @@ services:
   system_executor:
     build:
       context: .
-      dockerfile: docker/system_executor.Dockerfile
+      dockerfile: docker/system_executor_python.Dockerfile
     container_name: hopper-system-executor
     ports:
       - "${SYSTEM_EXECUTOR_PORT:-5002}:5002"
     volumes:
-      - /Users:/host_users:ro
+      - ./config/command_whitelist.yaml:/app/config/command_whitelist.yaml:ro
     environment:
       - SYSTEM_EXECUTOR_PORT=5002
+      - SYSTEM_EXECUTOR_WHITELIST=/app/config/command_whitelist.yaml
     env_file:
       - .env
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
     privileged: false
-
-  # Module STT (Speech-to-Text)
-  stt:
-    build:
-      context: .
-      dockerfile: docker/stt.Dockerfile
-    container_name: hopper-stt
-    ports:
-      - "${STT_SERVICE_PORT:-5003}:5003"
-    volumes:
-      - ./src/stt:/app
-      - ./data/models:/models
-    environment:
-      - STT_SERVICE_PORT=5003
-      - STT_MODEL=${STT_MODEL:-whisper-medium}
-      - STT_LANGUAGE=${STT_LANGUAGE:-fr}
-    env_file:
-      - .env
-    networks:
-      - hopper-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Module TTS (Text-to-Speech)
-  tts:
-    build:
-      context: .
-      dockerfile: docker/tts.Dockerfile
-    container_name: hopper-tts
-    ports:
-      - "${TTS_SERVICE_PORT:-5004}:5004"
-    volumes:
-      - ./src/tts:/app
-      - ./data/models:/models
-    environment:
-      - TTS_SERVICE_PORT=5004
-      - TTS_VOICE=${TTS_VOICE:-fr-FR}
-    env_file:
-      - .env
-    networks:
-      - hopper-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
 
   # Module d'authentification
   auth:
@@ -164,7 +115,7 @@ services:
     env_file:
       - .env
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
 
   # Connecteurs (groupés pour Phase 1)
@@ -184,8 +135,146 @@ services:
     env_file:
       - .env
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
+
+  # ============================================
+  # PHASE 3 - Production Voice & Email Services
+  # ============================================
+
+  # Service 4: Whisper STT (Speech-to-Text) - Version Simple
+  whisper:
+    image: hopper-whisper:latest
+    container_name: hopper_whisper
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./data/audio_samples:/app/audio_samples:ro
+    environment:
+      - MODEL_SIZE=base
+      - LANGUAGE=fr
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - hopper_network
+
+  # Piper TTS - Production Text-to-Speech
+  tts_piper:
+    build:
+      context: .
+      dockerfile: docker/tts_piper.Dockerfile
+    container_name: hopper-tts-piper
+    ports:
+      - "5004:5004"
+    volumes:
+      - piper_models:/app/models
+    environment:
+      - TTS_SERVICE_PORT=5004
+      - PIPER_VOICE=fr_FR-siwis-medium
+      - SAMPLE_RATE=22050
+    networks:
+      - hopper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Voice Authentication - Speaker Verification
+  auth_voice:
+    build:
+      context: .
+      dockerfile: docker/auth_voice.Dockerfile
+    container_name: hopper-auth-voice
+    ports:
+      - "5007:5007"
+    volumes:
+      - voice_profiles:/app/profiles
+      - ./src/voice:/app/src/voice
+    environment:
+      - AUTH_VOICE_PORT=5007
+      - SPEAKER_MODEL=speechbrain/spkrec-ecapa-voxceleb
+      - SIMILARITY_THRESHOLD=0.75
+    networks:
+      - hopper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 3G
+
+  # Email Connector - DISABLED FOR NOW
+  # Uncomment when ready to use email features
+  # email:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/email.Dockerfile
+  #   container_name: hopper-email
+  #   ports:
+  #     - "5008:5008"
+  #   volumes:
+  #     - email_cache:/app/cache
+  #     - ./src/connectors/email:/app/email
+  #   environment:
+  #     - EMAIL_SERVICE_PORT=5008
+  #     - CHECK_INTERVAL=${EMAIL_CHECK_INTERVAL:-60}
+  #   env_file:
+  #     - .env
+  #     - .env.email  # Email credentials séparés
+  #   networks:
+  #     - hopper_network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:5008/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 20s
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 512M
+  #       reservations:
+  #         memory: 256M
+
+  # Qdrant - Vector Database (Phase 2 concrétisation)
+  qdrant:
+    image: qdrant/qdrant:v1.7.4
+    container_name: hopper-qdrant
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC (optionnel)
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - hopper_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # Neo4j - GraphRAG Database (Phase 3.5)
   neo4j:
@@ -203,7 +292,7 @@ services:
       - neo4j_data:/data
       - neo4j_logs:/logs
     networks:
-      - hopper-network
+      - hopper_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "hopper123", "RETURN 1"]
@@ -213,12 +302,26 @@ services:
       start_period: 60s
 
 networks:
-  hopper-network:
+  hopper_network:
     driver: bridge
 
 volumes:
+  # Phase 1 & 2
   models:
   vector_store:
   auth_data:
+  qdrant_data:
+  
+  # Phase 3 - Voice & Email
+  whisper_models:
+    driver: local
+  piper_models:
+    driver: local
+  voice_profiles:
+    driver: local
+  email_cache:
+    driver: local
+  
+  # Phase 3.5 - GraphRAG
   neo4j_data:
   neo4j_logs:

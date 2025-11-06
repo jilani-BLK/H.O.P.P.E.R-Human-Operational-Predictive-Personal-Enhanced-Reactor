@@ -1,0 +1,34 @@
+{
+  "gr_0": {
+    "name": "Data Access Protection",
+    "description": "Empêche l'accès à des données sensibles",
+    "check_function": "check_data_access",
+    "risk_level": "critical",
+    "enabled": true,
+    "times_triggered": 0
+  },
+  "gr_1": {
+    "name": "System Modification Protection",
+    "description": "Empêche les modifications système non autorisées",
+    "check_function": "check_system_modification",
+    "risk_level": "high",
+    "enabled": true,
+    "times_triggered": 0
+  },
+  "gr_2": {
+    "name": "External Access Control",
+    "description": "Contrôle les accès externes",
+    "check_function": "check_external_access",
+    "risk_level": "high",
+    "enabled": true,
+    "times_triggered": 0
+  },
+  "gr_3": {
+    "name": "Code Execution Control",
+    "description": "Contrôle l'exécution de code",
+    "check_function": "check_code_execution",
+    "risk_level": "medium",
+    "enabled": true,
+    "times_triggered": 0
+  }
+}

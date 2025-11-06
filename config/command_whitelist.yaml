@@ -54,3 +54,11 @@ commands:
   whoami:
     allowed_args: []
     description: Affiche utilisateur
+  touch:
+    allowed_args: []
+    description: Crée un fichier vide
+    file_access: write
+  open:
+    allowed_args:
+    - -a
+    description: Ouvre fichier ou application (macOS)

@@ -62,8 +62,8 @@ def main():
         check_file_exists(".env.example", "Template env"),
         check_file_exists("docker-compose.yml", "Docker Compose"),
         check_file_exists("Makefile", "Makefile"),
-        check_file_exists("hopper-cli.py", "CLI"),
-        check_file_exists("install.sh", "Script installation"),
+        check_file_exists("hopper_cli.py", "CLI Phase 1"),
+        check_file_exists("scripts/install/install.sh", "Script installation"),
     ]
     total += len(checks)
     passed += sum(checks)
@@ -86,9 +86,7 @@ def main():
     dockerfiles = [
         "docker/orchestrator.Dockerfile",
         "docker/llm.Dockerfile",
-        "docker/system_executor.Dockerfile",
-        "docker/stt.Dockerfile",
-        "docker/tts.Dockerfile",
+        "docker/system_executor_python.Dockerfile",
         "docker/auth.Dockerfile",
         "docker/connectors.Dockerfile",
     ]
@@ -99,13 +97,12 @@ def main():
     # Vérification modules Python
     print(f"\n{BOLD}[4] Modules Python - Orchestrateur{RESET}")
     py_files = [
-        "src/orchestrator/main.py",
+        "src/orchestrator/main_phase1.py",
         "src/orchestrator/config.py",
         "src/orchestrator/requirements.txt",
-        "src/orchestrator/core/dispatcher.py",
-        "src/orchestrator/core/context_manager.py",
+        "src/orchestrator/core/simple_dispatcher.py",
         "src/orchestrator/core/service_registry.py",
-        "src/orchestrator/api/routes.py",
+        "src/orchestrator/api/phase1_routes.py",
     ]
     
     for pf in py_files:
@@ -119,8 +116,7 @@ def main():
     print(f"\n{BOLD}[5] Services IA et Connecteurs{RESET}")
     services = [
         "src/llm_engine/server.py",
-        "src/stt/server.py",
-        "src/tts/server.py",
+        "src/system_executor/server.py",
         "src/auth/server.py",
         "src/connectors/server.py",
     ]
@@ -142,11 +138,11 @@ def main():
     
     # Vérification CLI
     print(f"\n{BOLD}[7] Interface CLI{RESET}")
-    if check_file_exists("hopper-cli.py", "CLI principal"):
-        check_python_syntax("hopper-cli.py")
+    if check_file_exists("hopper_cli.py", "CLI Phase 1"):
+        check_python_syntax("hopper_cli.py")
         
         # Vérifier si exécutable
-        is_executable = os.access("hopper-cli.py", os.X_OK)
+        is_executable = os.access("hopper_cli.py", os.X_OK)
         check(is_executable, "CLI exécutable")
         passed += 2
     total += 2

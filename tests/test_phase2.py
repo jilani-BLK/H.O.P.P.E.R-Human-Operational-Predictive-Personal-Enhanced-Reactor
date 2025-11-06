@@ -9,7 +9,7 @@ import time
 from typing import Dict, Any
 
 # Configuration
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:5050"  # Corrigé: orchestrator sur 5050
 LLM_URL = "http://localhost:5001"
 TEST_USER_ID = "test_user_phase2"
 
@@ -91,8 +91,8 @@ class TestPhase2KnowledgeBase:
         fact = "La tour Eiffel mesure 330 mètres de hauteur"
         
         r = requests.post(
-            f"{LLM_URL}/learn",
-            json={"text": fact}
+            f"{LLM_URL}/kb/learn",  # Utiliser /kb/learn alias
+            json={"text": fact}  # Format correct: text pas command
         )
         
         assert r.status_code == 200
@@ -107,7 +107,7 @@ class TestPhase2KnowledgeBase:
         """Test recherche d'un fait appris"""
         # D'abord apprendre
         requests.post(
-            f"{LLM_URL}/learn",
+            f"{LLM_URL}/kb/learn",
             json={"text": "Python a été créé par Guido van Rossum en 1991"}
         )
         
@@ -130,19 +130,20 @@ class TestPhase2Conversation:
     """Tests de conversation via orchestrator"""
     
     def test_hopper_persona(self):
-        """Vérifier persona HOPPER"""
+        """Test que HOPPER se présente correctement"""
         r = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Qui es-tu?"}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Qui es-tu?"}
         )
         
         assert r.status_code == 200
-        response = r.json()['message'].lower()
+        data = r.json()
+        response = data.get('response', '').lower()
         
         assert 'hopper' in response, "Ne se présente pas comme HOPPER"
         assert 'assistant' in response or 'ia' in response
         
-        print(f"✅ Persona: {r.json()['message'][:100]}...")
+        print(f"✅ Persona: {data.get('response', '')[:100]}...")
     
     def test_multi_turn_conversation(self):
         """Test conversation multi-tour avec contexte"""
@@ -150,27 +151,27 @@ class TestPhase2Conversation:
         
         # Tour 1
         r1 = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Bonjour, comment vas-tu?", "user_id": user_id}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Bonjour, comment vas-tu?", "user_id": user_id}
         )
         assert r1.status_code == 200
-        print(f"Tour 1: {r1.json()['message'][:60]}...")
+        print(f"Tour 1: {r1.json().get('response', '')[:60]}...")
         
         # Tour 2
         r2 = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Que peux-tu faire pour moi?", "user_id": user_id}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Que peux-tu faire pour moi?", "user_id": user_id}
         )
         assert r2.status_code == 200
-        print(f"Tour 2: {r2.json()['message'][:60]}...")
+        print(f"Tour 2: {r2.json().get('response', '')[:60]}...")
         
         # Tour 3 - référence au contexte
         r3 = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Et tu fais ça comment?", "user_id": user_id}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Et tu fais ça comment?", "user_id": user_id}
         )
         assert r3.status_code == 200
-        print(f"Tour 3: {r3.json()['message'][:60]}...")
+        print(f"Tour 3: {r3.json().get('response', '')[:60]}...")
         
         print(f"✅ Conversation multi-tour: 3 échanges réussis")
     
@@ -178,24 +179,24 @@ class TestPhase2Conversation:
         """Test apprentissage puis rappel (RAG complet)"""
         # Apprendre un fait
         r1 = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Apprends que le Louvre est le musée le plus visité au monde"}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Apprends que le Louvre est le musée le plus visité au monde"}
         )
         assert r1.status_code == 200
-        assert 'appris' in r1.json()['message'].lower()
-        print(f"✅ Apprentissage: {r1.json()['message']}")
+        assert 'appris' in r1.json().get('response', '').lower()
+        print(f"✅ Apprentissage: {r1.json().get('response', '')}")
         
         # Rappeler le fait
         time.sleep(1)  # Laisser temps d'indexation
         
         r2 = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Quel est le musée le plus visité?"}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Quel est le musée le plus visité?"}
         )
         assert r2.status_code == 200
-        response = r2.json()['message'].lower()
+        response = r2.json().get('response', '').lower()
         assert 'louvre' in response, f"Louvre non mentionné dans: {response}"
-        print(f"✅ Rappel: {r2.json()['message']}")
+        print(f"✅ Rappel: {r2.json().get('response', '')}")
     
     def test_conversation_quality(self):
         """Test qualité conversations (10 scénarios)"""
@@ -218,13 +219,13 @@ class TestPhase2Conversation:
         for question, expected_keywords in scenarios:
             try:
                 r = requests.post(
-                    f"{BASE_URL}/command",
-                    json={"text": question},
+                    f"{BASE_URL}/api/v1/command",
+                    json={"command": question},
                     timeout=30  # Augmenté à 30s pour le LLM
                 )
                 
                 if r.status_code == 200:
-                    response = r.json()['message'].lower()
+                    response = r.json().get('response', '').lower()
                     
                     if any(keyword in response for keyword in expected_keywords):
                         passed += 1
@@ -263,8 +264,8 @@ class TestPhase2Integration:
         start = time.time()
         
         r = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Qu'est-ce que Python?"},
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Qu'est-ce que Python?"},
             timeout=15
         )
         
@@ -278,8 +279,8 @@ class TestPhase2Integration:
     def test_system_action_still_works(self):
         """Vérifier que les actions système fonctionnent toujours"""
         r = requests.post(
-            f"{BASE_URL}/command",
-            json={"text": "Liste les fichiers"}
+            f"{BASE_URL}/api/v1/command",
+            json={"command": "Liste les fichiers"}
         )
         
         assert r.status_code == 200
@@ -293,8 +294,8 @@ class TestPhase2Integration:
         
         def make_request(i):
             r = requests.post(
-                f"{BASE_URL}/command",
-                json={"text": f"Dis bonjour numéro {i}"},
+                f"{BASE_URL}/api/v1/command",
+                json={"command": f"Dis bonjour numéro {i}"},
                 timeout=15
             )
             return r.status_code == 200
@@ -336,7 +337,7 @@ def test_phase2_summary():
         orch_data = r_orch.json()
         print(f"✅ Orchestrator:")
         print(f"   - Status: {orch_data['status']}")
-        print(f"   - Services actifs: {sum(orch_data['services'].values())}/7")
+        print(f"   - Phase: {orch_data.get('phase', 'N/A')}")
     
     print("="*60)
     print("PHASE 2 VALIDÉE ✅")
